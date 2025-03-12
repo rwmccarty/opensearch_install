@@ -304,6 +304,7 @@ class OpenSearchInstaller:
             with open(CONFIG_FILE, 'r') as f:
                 config_content = f.read()
             
+            
             # Parse the YAML content line by line to handle comments
             lines = config_content.split('\n')
             found_settings = {}
