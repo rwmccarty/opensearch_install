@@ -5,6 +5,7 @@ import subprocess
 import argparse  # Importing argparse for command-line argument parsing
 import platform  # For detecting OS
 import sys
+import time  # For sleep during startup
 from open_search_install_config import ADMIN_PASSWORD, DEFAULT_VERSION, DOWNLOAD_DIR
 
 
@@ -131,6 +132,41 @@ class OpenSearchInstaller:
             print(f"Error verifying OpenSearch service: {e}")
             sys.exit(1)
 
+    def verify_api(self):
+        print("\nVerifying OpenSearch API...")
+        try:
+            result = subprocess.run(
+                ["curl", "-X", "GET", "https://localhost:9200", 
+                 "-u", f"admin:{self.admin_password}", 
+                 "--insecure",
+                 "--silent"],  # Add silent to get clean output
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            if self.debug:
+                print("\nDebug: API Response:")
+                print(result.stdout)
+            
+            if '"tagline" : "The OpenSearch Project: https://opensearch.org/"' in result.stdout:
+                print("✓ OpenSearch API check passed - Service is running and responding correctly")
+                return True
+            else:
+                print("✗ OpenSearch API check failed - Unexpected response")
+                if self.debug:
+                    print("Expected tagline not found in response")
+                return False
+                
+        except subprocess.CalledProcessError as e:
+            print("✗ OpenSearch API check failed - Service not responding")
+            if self.debug:
+                print(f"Error: {str(e)}")
+                if e.stderr:
+                    print("Error output:")
+                    print(e.stderr)
+            return False
+
     def run_installation(self):
         if self.is_windows:
             # For Windows, we'll just download the package
@@ -144,6 +180,10 @@ class OpenSearchInstaller:
             self.enable_service()
             self.start_service()
             self.verify_service()
+            # Add a small delay to allow OpenSearch to fully start
+            print("\nWaiting 30 seconds for OpenSearch to fully start...")
+            time.sleep(30)
+            self.verify_api()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OpenSearch Installer")
