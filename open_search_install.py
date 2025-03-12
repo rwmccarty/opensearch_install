@@ -9,10 +9,11 @@ from open_search_install_config import ADMIN_PASSWORD, DEFAULT_VERSION, DOWNLOAD
 
 
 class OpenSearchInstaller:
-    def __init__(self, version, admin_password):
+    def __init__(self, version, admin_password, debug=False):
         self.version = version
         self.admin_password = admin_password
         self.is_windows = platform.system().lower() == 'windows'
+        self.debug = debug
 
     def download_opensearch(self):
         print("Downloading OpenSearch RPM...")
@@ -55,11 +56,13 @@ class OpenSearchInstaller:
             # Construct the command with environment variable
             install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
-            print("\nDebug: Executing command:")
-            print("----------------------------------------")
-            print(install_cmd)
-            print("----------------------------------------\n")
-            input("Press Enter to continue...")
+            if self.debug:
+                print("\nDebug: Executing command:")
+                print("----------------------------------------")
+                print(install_cmd)
+                print("----------------------------------------\n")
+                input("Press Enter to continue...")
+            
             result = subprocess.run(
                 install_cmd,
                 shell=True,
@@ -67,7 +70,8 @@ class OpenSearchInstaller:
                 text=True
             )
             
-            print("\nDebug: Command completed with return code:", result.returncode)
+            if self.debug:
+                print("\nDebug: Command completed with return code:", result.returncode)
             
             if result.returncode != 0:
                 print("\nInstallation failed. Full output:")
@@ -145,10 +149,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OpenSearch Installer")
     parser.add_argument("--download", "-d", action="store_true", help="Download OpenSearch package only, do not install or start the service.")
     parser.add_argument("--version", "-v", type=str, default=DEFAULT_VERSION, help="Specify the OpenSearch version to install.")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
     
     args = parser.parse_args()
     
-    installer = OpenSearchInstaller(args.version, ADMIN_PASSWORD)
+    installer = OpenSearchInstaller(args.version, ADMIN_PASSWORD, debug=args.debug)
 
     if args.download:
         installer.download_opensearch()  # Only download the package
