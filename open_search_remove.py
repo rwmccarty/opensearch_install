@@ -8,10 +8,10 @@ import argparse
 from open_search_install_config import (
     OPENSEARCH_VERSION,
     OPENSEARCH_RPM_FILENAME,
-    OPENSEARCH_DASHBOARD_RPM_FILENAME,
-    CONFIG_DIR,
+    DASHBOARD_RPM_FILENAME,
+    OPENSEARCH_CONFIG_DIR,
     DASHBOARD_CONFIG_DIR,
-    SERVICE_NAME,
+    OPENSEARCH_SERVICE_NAME,
     DASHBOARD_SERVICE_NAME
 )
 
@@ -19,13 +19,13 @@ class OpenSearchRemover:
     def __init__(self, debug=False):
         self.debug = debug
         self.opensearch_rpm = OPENSEARCH_RPM_FILENAME(OPENSEARCH_VERSION).replace(".rpm", "")
-        self.dashboard_rpm = OPENSEARCH_DASHBOARD_RPM_FILENAME(OPENSEARCH_VERSION).replace(".rpm", "")
+        self.dashboard_rpm = DASHBOARD_RPM_FILENAME(OPENSEARCH_VERSION).replace(".rpm", "")
         if self.debug:
             print(f"Debug: OpenSearch RPM to remove: {self.opensearch_rpm}")
             print(f"Debug: Dashboard RPM to remove: {self.dashboard_rpm}")
-            print(f"Debug: OpenSearch config directory to remove: {CONFIG_DIR}")
+            print(f"Debug: OpenSearch config directory to remove: {OPENSEARCH_CONFIG_DIR}")
             print(f"Debug: Dashboard config directory to remove: {DASHBOARD_CONFIG_DIR}")
-            print(f"Debug: OpenSearch service name: {SERVICE_NAME}")
+            print(f"Debug: OpenSearch service name: {OPENSEARCH_SERVICE_NAME}")
             print(f"Debug: Dashboard service name: {DASHBOARD_SERVICE_NAME}")
 
     def check_root(self):
@@ -129,10 +129,10 @@ class OpenSearchRemover:
 
         # Then remove OpenSearch
         print("\nRemoving OpenSearch...")
-        self.stop_service(SERVICE_NAME)
-        self.disable_service(SERVICE_NAME)
-        self.remove_package(self.opensearch_rpm, SERVICE_NAME)
-        self.remove_config_directory(CONFIG_DIR, SERVICE_NAME)
+        self.stop_service(OPENSEARCH_SERVICE_NAME)
+        self.disable_service(OPENSEARCH_SERVICE_NAME)
+        self.remove_package(self.opensearch_rpm, OPENSEARCH_SERVICE_NAME)
+        self.remove_config_directory(OPENSEARCH_CONFIG_DIR, OPENSEARCH_SERVICE_NAME)
 
         print("\n✓ OpenSearch and Dashboard removal completed successfully")
 

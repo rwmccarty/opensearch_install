@@ -12,10 +12,14 @@ from open_search_install_config import (
     DOWNLOAD_DIR,
     OPENSEARCH_RPM_URL,
     OPENSEARCH_RPM_FILENAME,
-    CONFIG_DIR,
-    CONFIG_FILE,
-    JVM_FILE,
-    SERVICE_NAME,
+    OPENSEARCH_CONFIG_DIR,
+    OPENSEARCH_CONFIG_FILE,
+    OPENSEARCH_JVM_FILE,
+    OPENSEARCH_SERVICE_NAME,
+    DASHBOARD_SERVICE_NAME,
+    DASHBOARD_CONFIG_FILE,
+    DASHBOARD_RPM_FILENAME,
+    DASHBOARD_RPM_URL,
     DASHBOARD
 )
 
@@ -26,7 +30,7 @@ class OpenSearchInstaller:
         self.debug = debug
 
     def download_opensearch(self):
-        print(f"Downloading {SERVICE_NAME} RPM...")
+        print(f"Downloading {OPENSEARCH_SERVICE_NAME} RPM...")
         # Create downloads directory if it doesn't exist
         downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
         os.makedirs(downloads_dir, exist_ok=True)
@@ -39,7 +43,7 @@ class OpenSearchInstaller:
             print(f"Downloading from: {opensearch_rpm_url}")
             print(f"Downloading to: {downloads_dir}")
             subprocess.run(["curl", "-L", "-o", opensearch_rpm_file, opensearch_rpm_url], check=True)
-            print(f"Downloaded {SERVICE_NAME} RPM to {opensearch_rpm_file}")
+            print(f"Downloaded {OPENSEARCH_SERVICE_NAME} RPM to {opensearch_rpm_file}")
             
             # Verify the file exists and has size > 0
             if not os.path.exists(opensearch_rpm_file) or os.path.getsize(opensearch_rpm_file) == 0:
@@ -48,6 +52,33 @@ class OpenSearchInstaller:
             # Set appropriate permissions
             subprocess.run(["sudo", "chmod", "644", opensearch_rpm_file], check=True)
             return opensearch_rpm_file
+        except Exception as e:
+            print(f"Error downloading RPM: {str(e)}")
+            raise
+
+    def download_dashboard(self):
+        print(f"Downloading {DASHBOARD_SERVICE_NAME} RPM...")
+        # Create downloads directory if it doesn't exist
+        downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
+        os.makedirs(downloads_dir, exist_ok=True)
+        
+        dashboard_rpm_url = DASHBOARD_RPM_URL(self.version)
+        dashboard_rpm_file = os.path.join(downloads_dir, DASHBOARD_RPM_FILENAME(self.version))
+        
+        # Download the RPM file
+        try:
+            print(f"Downloading from: {dashboard_rpm_url}")
+            print(f"Downloading to: {downloads_dir}")
+            subprocess.run(["curl", "-L", "-o", dashboard_rpm_file, dashboard_rpm_url], check=True)
+            print(f"Downloaded {DASHBOARD_SERVICE_NAME} RPM to {dashboard_rpm_file}")
+            
+            # Verify the file exists and has size > 0
+            if not os.path.exists(dashboard_rpm_file) or os.path.getsize(dashboard_rpm_file) == 0:
+                raise Exception(f"Download failed or file is empty: {dashboard_rpm_file}")
+                
+            # Set appropriate permissions
+            subprocess.run(["sudo", "chmod", "644", dashboard_rpm_file], check=True)
+            return dashboard_rpm_file
         except Exception as e:
             print(f"Error downloading RPM: {str(e)}")
             raise
@@ -71,14 +102,14 @@ class OpenSearchInstaller:
 
     def opensearch_install(self):
         rpm_file = self.download_opensearch()  # Ensure the RPM is downloaded before installation
-        print(f"Installing {SERVICE_NAME}...")
+        print(f"Installing {OPENSEARCH_SERVICE_NAME}...")
         
         try:
             # Install dependencies first
             self.install_deps()
             
             # Then install the RPM with verbose output
-            print(f"\nInstalling {SERVICE_NAME} RPM from {rpm_file}...")
+            print(f"\nInstalling {OPENSEARCH_SERVICE_NAME} RPM from {rpm_file}...")
             
             # Prepare the installation command with password in the command string
             install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
@@ -105,8 +136,8 @@ class OpenSearchInstaller:
             
             # First verify the package is installed and in the database
             basic_verify_cmds = [
-                f"rpm -q {SERVICE_NAME}",  # Basic package query
-                f"yum list installed {SERVICE_NAME}",  # Check yum database
+                f"rpm -q {OPENSEARCH_SERVICE_NAME}",  # Basic package query
+                f"yum list installed {OPENSEARCH_SERVICE_NAME}",  # Check yum database
                 "rpm -qa | grep opensearch"  # List all opensearch packages
             ]
             
@@ -128,7 +159,7 @@ class OpenSearchInstaller:
             
             # Run rpm -V separately as it may show expected modifications
             verify_result = subprocess.run(
-                f"rpm -V {SERVICE_NAME}",
+                f"rpm -V {OPENSEARCH_SERVICE_NAME}",
                 shell=True,
                 text=True,
                 capture_output=True
@@ -140,7 +171,7 @@ class OpenSearchInstaller:
             
             if all_passed:
                 elapsed_time = time.time() - start_time
-                print(f"\n✓ Final verification passed. {SERVICE_NAME} is fully installed and registered.")
+                print(f"\n✓ Final verification passed. {OPENSEARCH_SERVICE_NAME} is fully installed and registered.")
                 print(f"Installation process took {elapsed_time:.1f} seconds")
             else:
                 raise Exception("Final verification failed - package not properly installed")
@@ -153,34 +184,34 @@ class OpenSearchInstaller:
             raise
 
     def service_enable(self):
-        print(f"Enabling {SERVICE_NAME} service...")
+        print(f"Enabling {OPENSEARCH_SERVICE_NAME} service...")
         try:
-            subprocess.run(["sudo", "systemctl", "enable", SERVICE_NAME], check=True)
+            subprocess.run(["sudo", "systemctl", "enable", OPENSEARCH_SERVICE_NAME], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error enabling {SERVICE_NAME} service: {e}")
+            print(f"Error enabling {OPENSEARCH_SERVICE_NAME} service: {e}")
             sys.exit(1)
 
     def service_start(self):
-        print(f"Starting {SERVICE_NAME} service...")
+        print(f"Starting {OPENSEARCH_SERVICE_NAME} service...")
         try:
-            subprocess.run(["sudo", "systemctl", "start", SERVICE_NAME], check=True)
+            subprocess.run(["sudo", "systemctl", "start", OPENSEARCH_SERVICE_NAME], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error starting {SERVICE_NAME} service: {e}")
+            print(f"Error starting {OPENSEARCH_SERVICE_NAME} service: {e}")
             sys.exit(1)
 
     def service_verify(self):
-        print(f"Verifying {SERVICE_NAME} service status...")
+        print(f"Verifying {OPENSEARCH_SERVICE_NAME} service status...")
         try:
-            subprocess.run(["sudo", "systemctl", "status", SERVICE_NAME], check=True)
+            subprocess.run(["sudo", "systemctl", "status", OPENSEARCH_SERVICE_NAME], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error verifying {SERVICE_NAME} service: {e}")
+            print(f"Error verifying {OPENSEARCH_SERVICE_NAME} service: {e}")
             sys.exit(1)
 
     def service_wrapper(self):
         """Wrapper function to enable and start the service, then wait for startup"""
         self.service_enable()
         self.service_start()
-        print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
+        print(f"\nWaiting 30 seconds for {OPENSEARCH_SERVICE_NAME} to fully start...")
         time.sleep(30)
         self.service_verify()
 
@@ -192,7 +223,7 @@ class OpenSearchInstaller:
         self.plugins_verify()
 
     def api_verify(self):
-        print(f"\nVerifying {SERVICE_NAME} API...")
+        print(f"\nVerifying {OPENSEARCH_SERVICE_NAME} API...")
         try:
             result = subprocess.run(
                 ["curl", "-X", "GET", "https://localhost:9200",
@@ -215,30 +246,30 @@ class OpenSearchInstaller:
                 import json
                 response = json.loads(result.stdout)
                 if response.get("tagline") == "The OpenSearch Project: https://opensearch.org/":
-                    print(f"\n✓ {SERVICE_NAME} API check passed - Service is running and responding correctly")
+                    print(f"\n✓ {OPENSEARCH_SERVICE_NAME} API check passed - Service is running and responding correctly")
                     print(f"Version: {response.get('version', {}).get('number', 'unknown')}")
                     print(f"Cluster name: {response.get('cluster_name', 'unknown')}")
                     return True
                 else:
-                    print(f"\n✗ {SERVICE_NAME} API check failed - Unexpected response")
+                    print(f"\n✗ {OPENSEARCH_SERVICE_NAME} API check failed - Unexpected response")
                     print("Expected tagline not found in response")
                     return False
             except json.JSONDecodeError:
-                print(f"\n✗ {SERVICE_NAME} API check failed - Invalid JSON response")
+                print(f"\n✗ {OPENSEARCH_SERVICE_NAME} API check failed - Invalid JSON response")
                 if self.debug:
                     print("Raw response received:")
                     print(repr(result.stdout))
                 return False
                 
         except subprocess.CalledProcessError as e:
-            print(f"\n✗ {SERVICE_NAME} API check failed - Service not responding")
+            print(f"\n✗ {OPENSEARCH_SERVICE_NAME} API check failed - Service not responding")
             if e.stderr:
                 print("Error output:")
                 print(e.stderr)
             return False
 
     def plugins_verify(self):
-        print(f"\nVerifying {SERVICE_NAME} Plugins...")
+        print(f"\nVerifying {OPENSEARCH_SERVICE_NAME} Plugins...")
         try:
             result = subprocess.run(
                 ["curl", "-X", "GET", "https://localhost:9200/_cat/plugins?v",
@@ -260,7 +291,7 @@ class OpenSearchInstaller:
             return True
                 
         except subprocess.CalledProcessError as e:
-            print(f"\n✗ {SERVICE_NAME} Plugins check failed - Service not responding")
+            print(f"\n✗ {OPENSEARCH_SERVICE_NAME} Plugins check failed - Service not responding")
             if e.stderr:
                 print("Error output:")
                 print(e.stderr)
@@ -268,31 +299,31 @@ class OpenSearchInstaller:
 
     def provision_dashboard(self):
         """Provision the Dashboard service"""
-        print(f"\nProvisioning {SERVICE_NAME}...")
+        print(f"\nProvisioning {DASHBOARD_SERVICE_NAME}...")
         try:
             # Enable the dashboard service
-            print(f"Enabling {SERVICE_NAME} service...")
-            subprocess.run(["sudo", "systemctl", "enable", SERVICE_NAME], check=True)
+            print(f"Enabling {DASHBOARD_SERVICE_NAME} service...")
+            subprocess.run(["sudo", "systemctl", "enable", DASHBOARD_SERVICE_NAME], check=True)
             
             # Start the dashboard service
-            print(f"Starting {SERVICE_NAME} service...")
-            subprocess.run(["sudo", "systemctl", "start", SERVICE_NAME], check=True)
+            print(f"Starting {DASHBOARD_SERVICE_NAME} service...")
+            subprocess.run(["sudo", "systemctl", "start", DASHBOARD_SERVICE_NAME], check=True)
             
             # Verify the dashboard service status
-            print(f"Verifying {SERVICE_NAME} service status...")
-            subprocess.run(["sudo", "systemctl", "status", SERVICE_NAME], check=True)
+            print(f"Verifying {DASHBOARD_SERVICE_NAME} service status...")
+            subprocess.run(["sudo", "systemctl", "status", DASHBOARD_SERVICE_NAME], check=True)
             
-            print(f"✓ {SERVICE_NAME} service provisioned successfully")
+            print(f"✓ {DASHBOARD_SERVICE_NAME} service provisioned successfully")
             return True
         except subprocess.CalledProcessError as e:
-            print(f"\n✗ Error provisioning {SERVICE_NAME} service: {e}")
+            print(f"\n✗ Error provisioning {DASHBOARD_SERVICE_NAME} service: {e}")
             if hasattr(e, 'stderr') and e.stderr:
                 print("Error output:")
                 print(e.stderr)
             return False
 
     def verify_config(self):
-        print(f"\nVerifying {SERVICE_NAME} configuration...")
+        print(f"\nVerifying {OPENSEARCH_SERVICE_NAME} configuration...")
         required_settings = {
             'network.host': '0.0.0.0',
             'discovery.type': 'single-node',
@@ -300,7 +331,7 @@ class OpenSearchInstaller:
         }
         
         try:
-            with open(CONFIG_FILE, 'r') as f:
+            with open(OPENSEARCH_CONFIG_FILE, 'r') as f:
                 config_content = f.read()
             
 
@@ -360,7 +391,7 @@ plugins.security.disabled: false
 """
         try:
             # Read existing config
-            with open(CONFIG_FILE, 'r') as f:
+            with open(OPENSEARCH_CONFIG_FILE, 'r') as f:
                 existing_config = f.read()
 
             # Remove any existing settings we're about to add
@@ -386,7 +417,7 @@ plugins.security.disabled: false
             updated_config = '\n'.join(filtered_lines).strip() + new_config
 
             # Write updated config
-            with open(CONFIG_FILE, 'w') as f:
+            with open(OPENSEARCH_CONFIG_FILE, 'w') as f:
                 f.write(updated_config)
 
             print("✓ Configuration updated successfully")
@@ -407,7 +438,7 @@ plugins.security.disabled: false
         
         try:
             # Read existing JVM options
-            with open(JVM_FILE, 'r') as f:
+            with open(OPENSEARCH_JVM_FILE, 'r') as f:
                 lines = f.readlines()
             
             # Remove existing Xms and Xmx settings
@@ -421,7 +452,7 @@ plugins.security.disabled: false
             new_lines.append('-Xmx8g\n')
             
             # Write updated config
-            with open(JVM_FILE, 'w') as f:
+            with open(OPENSEARCH_JVM_FILE, 'w') as f:
                 f.writelines(new_lines)
             
             print("✓ JVM heap settings updated successfully")
@@ -445,7 +476,7 @@ plugins.security.disabled: false
         }
         
         try:
-            with open(JVM_FILE, 'r') as f:
+            with open(OPENSEARCH_JVM_FILE, 'r') as f:
                 lines = f.readlines()
             
             found_settings = {}
@@ -486,13 +517,13 @@ plugins.security.disabled: false
         self.provision_dashboard()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=f"{SERVICE_NAME} Installer")
-    parser.add_argument("--download", "-d", action="store_true", help=f"Download {SERVICE_NAME} package only, do not install or start the service.")
-    parser.add_argument("--version", "-v", type=str, default=OPENSEARCH_VERSION, help=f"Specify the {SERVICE_NAME} version to install.")
+    parser = argparse.ArgumentParser(description=f"{OPENSEARCH_SERVICE_NAME} Installer")
+    parser.add_argument("--download", "-d", action="store_true", help=f"Download {OPENSEARCH_SERVICE_NAME} package only, do not install or start the service.")
+    parser.add_argument("--version", "-v", type=str, default=OPENSEARCH_VERSION, help=f"Specify the {OPENSEARCH_SERVICE_NAME} version to install.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--api", action="store_true", help="Only run the API verification test")
     parser.add_argument("--plugins", action="store_true", help="Only run the plugins endpoint test")
-    parser.add_argument("--checkconfig", action="store_true", help=f"Verify {SERVICE_NAME} configuration settings")
+    parser.add_argument("--checkconfig", action="store_true", help=f"Verify {OPENSEARCH_SERVICE_NAME} configuration settings")
     parser.add_argument("--checkjvm", action="store_true", help="Verify JVM heap settings")
     
     args = parser.parse_args()
