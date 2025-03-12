@@ -7,6 +7,7 @@ import argparse  # Importing argparse for command-line argument parsing
 import platform  # For detecting OS
 import sys
 
+
 class OpenSearchInstaller:
     def __init__(self, version, admin_password):
         self.version = version
