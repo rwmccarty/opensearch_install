@@ -207,6 +207,67 @@ class OpenSearchInstaller:
                 print(e.stderr)
             return False
 
+    def update_opensearch_config(self):
+        print("\nUpdating OpenSearch configuration...")
+        config_file = "/etc/opensearch/opensearch.yml"
+        
+        # Configuration to add
+        new_config = """
+# Bind OpenSearch to the correct network interface. Use 0.0.0.0
+# to include all available interfaces or specify an IP address
+# assigned to a specific interface.
+network.host: 0.0.0.0
+
+# Unless you have already configured a cluster, you should set
+# discovery.type to single-node, or the bootstrap checks will
+# fail when you try to start the service.
+discovery.type: single-node
+
+# If you previously disabled the Security plugin in opensearch.yml,
+# be sure to re-enable it. Otherwise you can skip this setting.
+plugins.security.disabled: false
+"""
+        try:
+            # Read existing config
+            with open(config_file, 'r') as f:
+                existing_config = f.read()
+
+            # Remove any existing settings we're about to add
+            lines = existing_config.split('\n')
+            filtered_lines = []
+            skip_next = False
+            
+            for line in lines:
+                if skip_next:
+                    skip_next = False
+                    continue
+                    
+                # Skip comments before our settings and the settings themselves
+                if any(setting in line for setting in ['network.host:', 'discovery.type:', 'plugins.security.disabled:']):
+                    skip_next = True  # Skip the next line if it's a value
+                    continue
+                if line.strip().startswith('#') and any(text in line for text in ['network.host', 'discovery.type', 'plugins.security.disabled']):
+                    continue
+                    
+                filtered_lines.append(line)
+
+            # Combine filtered config with new settings
+            updated_config = '\n'.join(filtered_lines).strip() + new_config
+
+            # Write updated config
+            with open(config_file, 'w') as f:
+                f.write(updated_config)
+
+            print("✓ OpenSearch configuration updated successfully")
+            
+            if self.debug:
+                print("\nDebug: Updated configuration:")
+                print(updated_config)
+                
+        except Exception as e:
+            print(f"✗ Error updating OpenSearch configuration: {str(e)}")
+            raise
+
     def run_installation(self):
         if self.is_windows:
             # For Windows, we'll just download the package
@@ -217,6 +278,7 @@ class OpenSearchInstaller:
             print("3. Follow the OpenSearch documentation for Windows configuration")
         else:
             self.install_opensearch()
+            self.update_opensearch_config()  # Add configuration update
             self.enable_service()
             self.start_service()
             self.verify_service()
