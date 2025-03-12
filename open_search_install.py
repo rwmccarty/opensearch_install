@@ -8,13 +8,15 @@ import sys
 import time  # For sleep during startup
 from open_search_install_config import (
     ADMIN_PASSWORD, 
-    DEFAULT_VERSION, 
+    OPENSEARCH_VERSION, 
     DOWNLOAD_DIR,
     DASHBOARD_VERSION,
     DASHBOARD_URL,
     OPENSEARCH_RPM_URL,
     OPENSEARCH_RPM_FILENAME
 )
+
+
 
 
 class OpenSearchInstaller:
@@ -456,7 +458,7 @@ plugins.security.disabled: false
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OpenSearch Installer")
     parser.add_argument("--download", "-d", action="store_true", help="Download OpenSearch package only, do not install or start the service.")
-    parser.add_argument("--version", "-v", type=str, default=DEFAULT_VERSION, help="Specify the OpenSearch version to install.")
+    parser.add_argument("--version", "-v", type=str, default=OPENSEARCH_VERSION, help="Specify the OpenSearch version to install.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--api", action="store_true", help="Only run the API verification test")
     parser.add_argument("--plugins", action="store_true", help="Only run the plugins endpoint test")
