@@ -34,6 +34,7 @@ class OpenSearchInstaller:
         # Download the RPM file
         try:
             print(f"Downloading from: {rpm_url}")
+            print(f"Downloading to: {downloads_dir}")
             subprocess.run(["curl", "-L", "-o", rpm_file, rpm_url], check=True)
             print(f"Downloaded OpenSearch RPM to {rpm_file}")
             
