@@ -94,85 +94,16 @@ class OpenSearchInstaller:
             print("\nInstalling RPM (this may take a few minutes)...")
             start_time = time.time()
             
-            # Use Popen to get more control over the process
-            process = subprocess.Popen(
+            # Use subprocess.run to show native yum output
+            result = subprocess.run(
                 install_cmd,
                 shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                check=True,
                 text=True,
-                bufsize=1,
-                universal_newlines=True
+                stdout=sys.stdout,
+                stderr=sys.stderr
             )
 
-            # Poll process while printing output in real-time
-            while True:
-                output = process.stdout.readline()
-                if output:
-                    print(output.strip())
-                error = process.stderr.readline()
-                if error:
-                    print(error.strip(), file=sys.stderr)
-                
-                # Check if process has finished
-                return_code = process.poll()
-                if return_code is not None:
-                    # Process has completed
-                    # Print any remaining output
-                    for output in process.stdout.readlines():
-                        if output:
-                            print(output.strip())
-                    for error in process.stderr.readlines():
-                        if error:
-                            print(error.strip(), file=sys.stderr)
-                    
-                    if return_code != 0:
-                        raise subprocess.CalledProcessError(return_code, install_cmd)
-                    break
-
-            print("\nWaiting for RPM transaction to complete...")
-            max_transaction_checks = 30
-            check_interval = 2
-            
-            for i in range(max_transaction_checks):
-                try:
-                    # Check for any running rpm or yum processes
-                    rpm_check = subprocess.run(
-                        "ps aux | grep -v grep | egrep 'rpm|yum'",
-                        shell=True,
-                        text=True,
-                        capture_output=True
-                    )
-                    
-                    # Check if package is fully installed and queryable
-                    verify_result = subprocess.run(
-                        f"rpm -q {SERVICE_NAME} && rpm -V {SERVICE_NAME}",
-                        shell=True,
-                        text=True,
-                        capture_output=True
-                    )
-                    
-                    # If no rpm/yum processes are running AND we can query the package
-                    if rpm_check.returncode != 0 and verify_result.returncode == 0:
-                        print(f"\n✓ {SERVICE_NAME} RPM transaction completed successfully")
-                        if self.debug:
-                            print("Installed package:", verify_result.stdout.strip())
-                        break
-                    else:
-                        print(f"Installation still in progress... (check {i + 1}/{max_transaction_checks})")
-                        if self.debug and verify_result.stderr:
-                            print("Verification output:", verify_result.stderr)
-                except Exception as e:
-                    print(f"Error checking installation status: {e}")
-                
-                if i < max_transaction_checks - 1:
-                    time.sleep(check_interval)
-                else:
-                    raise Exception("Installation timed out waiting for RPM transaction to complete")
-
-            elapsed_time = time.time() - start_time
-            print(f"\nInstallation process took {elapsed_time:.1f} seconds")
-            
             # Add a small delay to ensure package database is updated
             time.sleep(2)
             
@@ -202,7 +133,9 @@ class OpenSearchInstaller:
                     print(result.stdout)
             
             if all_passed:
+                elapsed_time = time.time() - start_time
                 print(f"\n✓ Final verification passed. {SERVICE_NAME} is fully installed and verified.")
+                print(f"Installation process took {elapsed_time:.1f} seconds")
             else:
                 raise Exception("Final verification failed - package not properly installed")
                 
