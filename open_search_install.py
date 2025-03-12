@@ -55,12 +55,19 @@ class OpenSearchInstaller:
             # Construct the command with environment variable
             install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} sudo yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
+            print("\nDebug: Executing command:")
+            print("----------------------------------------")
+            print(install_cmd)
+            print("----------------------------------------\n")
+            
             result = subprocess.run(
                 install_cmd,
                 shell=True,
                 capture_output=True,
                 text=True
             )
+            
+            print("\nDebug: Command completed with return code:", result.returncode)
             
             if result.returncode != 0:
                 print("\nInstallation failed. Full output:")
