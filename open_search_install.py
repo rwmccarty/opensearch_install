@@ -53,7 +53,7 @@ class OpenSearchInstaller:
             print(f"Installing OpenSearch RPM from {rpm_file}...")
             
             # Construct the command with environment variable
-            install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} sudo yum localinstall {rpm_file} -y --verbose --nogpgcheck"
+            install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
             print("\nDebug: Executing command:")
             print("----------------------------------------")
