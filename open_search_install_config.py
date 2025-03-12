@@ -3,7 +3,7 @@
 # OpenSearch Installation Configuration
 
 # Admin password for OpenSearch
-ADMIN_PASSWORD = "asdfADF1234-"
+ADMIN_PASSWORD = "asdfASDF1234-"
 
 # Default version if not specified
 DEFAULT_VERSION = "2.19.1"
