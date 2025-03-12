@@ -19,11 +19,12 @@ class OpenSearchInstaller:
         downloads_dir = os.path.join(os.getcwd(), "downloads")
         os.makedirs(downloads_dir, exist_ok=True)
         
-        rpm_url = f"https://artifacts.opensearch.org/releases/bundle/opensearch/{self.version}/rpm/opensearch-{self.version}-1.x86_64.rpm"
-        rpm_file = os.path.join(downloads_dir, f"opensearch-{self.version}-1.x86_64.rpm")
+        rpm_url = f"https://artifacts.opensearch.org/releases/bundle/opensearch/{self.version}/opensearch-{self.version}-linux-x64.rpm"
+        rpm_file = os.path.join(downloads_dir, f"opensearch-{self.version}-linux-x64.rpm")
         
         # Download the RPM file
         try:
+            print(f"Downloading from: {rpm_url}")
             subprocess.run(["curl", "-L", "-o", rpm_file, rpm_url], check=True)
             print(f"Downloaded OpenSearch RPM to {rpm_file}")
             
@@ -48,7 +49,7 @@ class OpenSearchInstaller:
             subprocess.run(["sudo", "yum", "install", "java-11-openjdk-devel", "-y"], check=True)
             
             # Then install the RPM with verbose output
-            print("Installing OpenSearch RPM...")
+            print(f"Installing OpenSearch RPM from {rpm_file}...")
             result = subprocess.run(["sudo", "yum", "localinstall", rpm_file, "-y", "--verbose", "--nogpgcheck"], 
                                   capture_output=True, 
                                   text=True)
