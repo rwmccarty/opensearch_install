@@ -132,29 +132,25 @@ class OpenSearchInstaller:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                bufsize=1,
-                universal_newlines=True
+                bufsize=1
             )
 
-            # Read output in real-time
-            while True:
-                output = process.stdout.readline()
-                if output:
-                    print(output.rstrip())
-                error = process.stderr.readline()
-                if error:
-                    print(error.rstrip(), file=sys.stderr)
-                # If process is finished and no more output, break
-                if output == '' and error == '' and process.poll() is not None:
-                    break
+            # Use communicate() to handle all output and wait for completion
+            stdout, stderr = process.communicate()
+            
+            # Print output
+            if stdout:
+                print(stdout)
+            if stderr:
+                print(stderr, file=sys.stderr)
 
-            # Wait for process to complete and check return code
-            return_code = process.wait()
-            if return_code != 0:
-                raise subprocess.CalledProcessError(return_code, install_cmd)
+            # Check return code
+            if process.returncode != 0:
+                raise subprocess.CalledProcessError(process.returncode, install_cmd)
 
-            # Add a small delay to ensure package database is updated
-            time.sleep(2)
+            # Add a longer delay to ensure all post-install scripts complete
+            print("\nWaiting for post-installation tasks to complete...")
+            time.sleep(10)
             
             # Final verification
             print("\nPerforming final verification...")
