@@ -419,11 +419,11 @@ plugins.security.disabled: false
 
     def run_installation(self):
         self.install_opensearch()
-        self.update_opensearch_config()
         self.set_jvm_heap()
         self.enable_service()
         self.start_service()
         self.verify_service()
+        self.update_opensearch_config()
         print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
         time.sleep(30)
         self.verify_api()
