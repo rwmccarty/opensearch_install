@@ -81,7 +81,7 @@ class OpenSearchInstaller:
             print(f"\nInstalling {SERVICE_NAME} RPM from {rpm_file}...")
             
             # Prepare the installation command with password in the command string
-            install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} sudo -E bash -c 'yum localinstall {rpm_file} -y --verbose --nogpgcheck'"
+            install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck'"
             
             if self.debug:
                 print("\nDebug: Executing command:")
@@ -304,7 +304,7 @@ class OpenSearchInstaller:
             with open(CONFIG_FILE, 'r') as f:
                 config_content = f.read()
             
-            
+
             # Parse the YAML content line by line to handle comments
             lines = config_content.split('\n')
             found_settings = {}
