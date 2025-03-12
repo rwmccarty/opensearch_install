@@ -6,7 +6,13 @@ import argparse  # Importing argparse for command-line argument parsing
 import platform  # For detecting OS
 import sys
 import time  # For sleep during startup
-from open_search_install_config import ADMIN_PASSWORD, DEFAULT_VERSION, DOWNLOAD_DIR
+from open_search_install_config import (
+    ADMIN_PASSWORD, 
+    DEFAULT_VERSION, 
+    DOWNLOAD_DIR,
+    DASHBOARD_VERSION,
+    DASHBOARD_URL
+)
 
 
 class OpenSearchInstaller:
@@ -40,6 +46,31 @@ class OpenSearchInstaller:
             return rpm_file
         except Exception as e:
             print(f"Error downloading RPM: {str(e)}")
+            raise
+
+    def download_dashboard(self):
+        print("Downloading OpenSearch Dashboard RPM...")
+        # Create downloads directory if it doesn't exist
+        downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
+        os.makedirs(downloads_dir, exist_ok=True)
+        
+        rpm_file = os.path.join(downloads_dir, f"opensearch-dashboards-{DASHBOARD_VERSION}-linux-x64.rpm")
+        
+        # Download the RPM file
+        try:
+            print(f"Downloading from: {DASHBOARD_URL}")
+            subprocess.run(["curl", "-L", "-o", rpm_file, DASHBOARD_URL], check=True)
+            print(f"Downloaded OpenSearch Dashboard RPM to {rpm_file}")
+            
+            # Verify the file exists and has size > 0
+            if not os.path.exists(rpm_file) or os.path.getsize(rpm_file) == 0:
+                raise Exception(f"Download failed or file is empty: {rpm_file}")
+                
+            # Set appropriate permissions
+            subprocess.run(["sudo", "chmod", "644", rpm_file], check=True)
+            return rpm_file
+        except Exception as e:
+            print(f"Error downloading Dashboard RPM: {str(e)}")
             raise
 
     def install_opensearch(self):
@@ -442,6 +473,8 @@ if __name__ == "__main__":
     elif args.checkjvm:
         installer.check_jvm_heap()  # Only verify JVM settings
     elif args.download:
-        installer.download_opensearch()  # Only download the package
+        print("Downloading OpenSearch and Dashboard packages...")
+        installer.download_opensearch()  # Download OpenSearch package
+        installer.download_dashboard()  # Download dashboard package
     else:
         installer.run_installation()  # Proceed with installation and service management

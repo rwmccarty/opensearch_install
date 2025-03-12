@@ -9,4 +9,8 @@ ADMIN_PASSWORD = "asdfASDF1234-"
 DEFAULT_VERSION = "2.19.1"
 
 # Installation paths and settings
-DOWNLOAD_DIR = "downloads" 
+DOWNLOAD_DIR = "downloads"
+
+# Dashboard Configuration
+DASHBOARD_VERSION = "2.19.1"
+DASHBOARD_URL = f"https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/{DASHBOARD_VERSION}/opensearch-dashboards-{DASHBOARD_VERSION}-linux-x64.rpm" 
