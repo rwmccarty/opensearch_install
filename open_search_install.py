@@ -58,7 +58,7 @@ class OpenSearchInstaller:
         
         try:
             # First check for and install dependencies
-            print("Checking and installing dependencies...")
+            print("\nChecking and installing dependencies...")
             start_time = time.time()
             subprocess.run(["yum", "install", "java-11-openjdk-devel", "-y"], 
                          check=True,
@@ -84,26 +84,6 @@ class OpenSearchInstaller:
             print("\nInstalling RPM (this may take a few minutes)...")
             start_time = time.time()
             
-            # First check if package is already installed
-            check_cmd = f"rpm -q opensearch-dashboards"
-            check_result = subprocess.run(check_cmd, 
-                                        shell=True, 
-                                        text=True,
-                                        capture_output=True)
-            
-            if check_result.returncode == 0:
-                print(f"Found existing installation: {check_result.stdout.strip()}")
-                print("Removing existing package...")
-                remove_cmd = "yum remove -y opensearch-dashboards"
-                subprocess.run(remove_cmd,
-                             shell=True,
-                             check=True,
-                             text=True,
-                             stdout=sys.stdout,
-                             stderr=sys.stderr)
-                print("✓ Existing package removed")
-            
-            print("\nStarting fresh installation...")
             result = subprocess.run(install_cmd,
                                  shell=True,
                                  check=True,
@@ -123,7 +103,7 @@ class OpenSearchInstaller:
             retry_delay = 2
             
             for attempt in range(max_retries):
-                verify_result = subprocess.run(f"rpm -q opensearch-dashboards",
+                verify_result = subprocess.run(f"rpm -q {SERVICE_NAME}",
                                             shell=True,
                                             text=True,
                                             capture_output=True)
