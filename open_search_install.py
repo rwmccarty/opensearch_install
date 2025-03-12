@@ -132,42 +132,10 @@ class OpenSearchInstaller:
             if return_code != 0:
                 raise Exception(f"Installation command failed with return code {return_code}")
 
-            print("\nVerifying installation completion...")
-            max_attempts = 90  # Maximum number of attempts
-            attempt = 0
-            while attempt < max_attempts:
-                attempt += 1
-                print(f"\nVerification attempt {attempt}/{max_attempts}")
-                
-                # Check 1: Package installed in yum
-                yum_check = subprocess.run(
-                    "yum list installed opensearch",
-                    shell=True,
-                    capture_output=True,
-                    text=True
-                ).returncode == 0
-                
-                # Check 2: Config file exists
-                config_check = os.path.exists(OPENSEARCH_CONFIG_FILE)
-                
-                # Check 3: JVM file exists
-                jvm_check = os.path.exists(OPENSEARCH_JVM_FILE)
-                
-                # Print status
-                print(f"✓ Package installed: {'Yes' if yum_check else 'No'}")
-                print(f"✓ Config file exists: {'Yes' if config_check else 'No'}")
-                print(f"✓ JVM file exists: {'Yes' if jvm_check else 'No'}")
-                
-                if yum_check and config_check and jvm_check:
-                    print("\n✓ All installation checks passed!")
-                    elapsed_time = time.time() - start_time
-                    print(f"Installation process took {elapsed_time:.1f} seconds")
-                    return
-                
-                print("Waiting for installation to complete...")
-                time.sleep(2)  # Wait 2 seconds between checks
-            
-            raise Exception("Installation verification timed out - required files not found")
+            # Now verify the installation completed successfully
+            self.verify_installation()
+            elapsed_time = time.time() - start_time
+            print(f"Installation process took {elapsed_time:.1f} seconds")
                 
         except subprocess.CalledProcessError as e:
             print(f"\nInstallation failed with return code {e.returncode}")
@@ -175,6 +143,43 @@ class OpenSearchInstaller:
         except Exception as e:
             print(f"\nInstallation failed: {str(e)}")
             raise
+
+    def verify_installation(self):
+        """Verify that the installation completed and all necessary files are present"""
+        print("\nVerifying installation completion...")
+        max_attempts = 90  # Maximum number of attempts
+        attempt = 0
+        while attempt < max_attempts:
+            attempt += 1
+            print(f"\nVerification attempt {attempt}/{max_attempts}")
+            
+            # Check 1: Package installed in yum
+            yum_check = subprocess.run(
+                "yum list installed opensearch",
+                shell=True,
+                capture_output=True,
+                text=True
+            ).returncode == 0
+            
+            # Check 2: Config file exists
+            config_check = os.path.exists(OPENSEARCH_CONFIG_FILE)
+            
+            # Check 3: JVM file exists
+            jvm_check = os.path.exists(OPENSEARCH_JVM_FILE)
+            
+            # Print status
+            print(f"✓ Package installed: {'Yes' if yum_check else 'No'}")
+            print(f"✓ Config file exists: {'Yes' if config_check else 'No'}")
+            print(f"✓ JVM file exists: {'Yes' if jvm_check else 'No'}")
+            
+            if yum_check and config_check and jvm_check:
+                print("\n✓ All installation checks passed!")
+                return True
+            
+            print("Waiting for installation to complete...")
+            time.sleep(2)  # Wait 2 seconds between checks
+        
+        raise Exception("Installation verification timed out - required files not found")
 
     def service_enable(self):
         print(f"Enabling {OPENSEARCH_SERVICE_NAME} service...")
