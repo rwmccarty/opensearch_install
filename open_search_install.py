@@ -10,8 +10,6 @@ from open_search_install_config import (
     ADMIN_PASSWORD, 
     OPENSEARCH_VERSION, 
     DOWNLOAD_DIR,
-    DASHBOARD_VERSION,
-    DASHBOARD_URL,
     OPENSEARCH_RPM_URL,
     OPENSEARCH_RPM_FILENAME
 )
