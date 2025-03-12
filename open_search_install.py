@@ -145,40 +145,30 @@ class OpenSearchInstaller:
                 check=True
             )
             
-            if self.debug:
-                print("\nDebug: API Response:")
-                print(result.stdout)
+            print("\nAPI Response:")
+            print(result.stdout)
             
             try:
                 import json
                 response = json.loads(result.stdout)
                 if response.get("tagline") == "The OpenSearch Project: https://opensearch.org/":
-                    print("✓ OpenSearch API check passed - Service is running and responding correctly")
-                    if self.debug:
-                        print(f"Version: {response.get('version', {}).get('number', 'unknown')}")
-                        print(f"Cluster name: {response.get('cluster_name', 'unknown')}")
+                    print("\n✓ OpenSearch API check passed - Service is running and responding correctly")
+                    print(f"Version: {response.get('version', {}).get('number', 'unknown')}")
+                    print(f"Cluster name: {response.get('cluster_name', 'unknown')}")
                     return True
                 else:
-                    print("✗ OpenSearch API check failed - Unexpected response")
-                    if self.debug:
-                        print("Expected tagline not found in response")
-                        print("Full response:")
-                        print(json.dumps(response, indent=2))
+                    print("\n✗ OpenSearch API check failed - Unexpected response")
+                    print("Expected tagline not found in response")
                     return False
             except json.JSONDecodeError:
-                print("✗ OpenSearch API check failed - Invalid JSON response")
-                if self.debug:
-                    print("Raw response:")
-                    print(result.stdout)
+                print("\n✗ OpenSearch API check failed - Invalid JSON response")
                 return False
                 
         except subprocess.CalledProcessError as e:
-            print("✗ OpenSearch API check failed - Service not responding")
-            if self.debug:
-                print(f"Error: {str(e)}")
-                if e.stderr:
-                    print("Error output:")
-                    print(e.stderr)
+            print("\n✗ OpenSearch API check failed - Service not responding")
+            if e.stderr:
+                print("Error output:")
+                print(e.stderr)
             return False
 
     def run_installation(self):
