@@ -149,13 +149,16 @@ class OpenSearchInstaller:
                 print("\nDebug: API Response:")
                 print(result.stdout)
             
-            if '"tagline" : "The OpenSearch Project: https://opensearch.org/"' in result.stdout:
+            # Check for the tagline anywhere in the response
+            if "The OpenSearch Project: https://opensearch.org/" in result.stdout:
                 print("✓ OpenSearch API check passed - Service is running and responding correctly")
                 return True
             else:
                 print("✗ OpenSearch API check failed - Unexpected response")
                 if self.debug:
                     print("Expected tagline not found in response")
+                    print("Full response:")
+                    print(result.stdout)
                 return False
                 
         except subprocess.CalledProcessError as e:
