@@ -137,7 +137,7 @@ class OpenSearchInstaller:
         try:
             result = subprocess.run(
                 ["curl", "-X", "GET", "https://localhost:9200", 
-                 "-u", f"admin:{self.admin_password}", 
+                 "-u", f"'admin:{self.admin_password}'",  # Added single quotes around credentials
                  "--insecure",
                  "--silent"],  # Add silent to get clean output
                 capture_output=True,
