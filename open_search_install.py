@@ -52,20 +52,30 @@ class OpenSearchInstaller:
             print(f"Error downloading RPM: {str(e)}")
             raise
 
-    def install_opensearch(self):
-        rpm_file = self.download_opensearch()  # Ensure the RPM is downloaded before installation
-        print(f"Installing {SERVICE_NAME}...")
-        
+    def install_deps(self):
+        print("\nChecking and installing dependencies...")
+        start_time = time.time()
         try:
-            # First check for and install dependencies
-            print("\nChecking and installing dependencies...")
-            start_time = time.time()
             subprocess.run(["yum", "install", "java-11-openjdk-devel", "-y"], 
                          check=True,
                          text=True,
                          stdout=sys.stdout,
                          stderr=sys.stderr)
             print(f"Dependencies installation took {time.time() - start_time:.1f} seconds")
+        except subprocess.CalledProcessError as e:
+            print(f"\nDependency installation failed with return code {e.returncode}")
+            if e.stderr:
+                print("Error output:")
+                print(e.stderr)
+            raise Exception(f"Dependency installation failed: {str(e)}")
+
+    def opensearch_install(self):
+        rpm_file = self.download_opensearch()  # Ensure the RPM is downloaded before installation
+        print(f"Installing {SERVICE_NAME}...")
+        
+        try:
+            # Install dependencies first
+            self.install_deps()
             
             # Then install the RPM with verbose output
             print(f"\nInstalling {SERVICE_NAME} RPM from {rpm_file}...")
@@ -131,7 +141,7 @@ class OpenSearchInstaller:
             print(f"\nInstallation failed: {str(e)}")
             raise
 
-    def enable_service(self):
+    def service_enable(self):
         print(f"Enabling {SERVICE_NAME} service...")
         try:
             subprocess.run(["sudo", "systemctl", "enable", SERVICE_NAME], check=True)
@@ -139,7 +149,7 @@ class OpenSearchInstaller:
             print(f"Error enabling {SERVICE_NAME} service: {e}")
             sys.exit(1)
 
-    def start_service(self):
+    def service_start(self):
         print(f"Starting {SERVICE_NAME} service...")
         try:
             subprocess.run(["sudo", "systemctl", "start", SERVICE_NAME], check=True)
@@ -147,7 +157,7 @@ class OpenSearchInstaller:
             print(f"Error starting {SERVICE_NAME} service: {e}")
             sys.exit(1)
 
-    def verify_service(self):
+    def service_verify(self):
         print(f"Verifying {SERVICE_NAME} service status...")
         try:
             subprocess.run(["sudo", "systemctl", "status", SERVICE_NAME], check=True)
@@ -155,7 +165,22 @@ class OpenSearchInstaller:
             print(f"Error verifying {SERVICE_NAME} service: {e}")
             sys.exit(1)
 
-    def verify_api(self):
+    def service_wrapper(self):
+        """Wrapper function to enable and start the service, then wait for startup"""
+        self.service_enable()
+        self.service_start()
+        print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
+        time.sleep(30)
+        self.service_verify()
+
+    def configuration_wrapper(self):
+        """Wrapper function to handle all configuration and verification steps"""
+        self.opensearch_config_update()
+        self.set_jvm_heap()
+        self.api_verify()
+        self.plugins_verify()
+
+    def api_verify(self):
         print(f"\nVerifying {SERVICE_NAME} API...")
         try:
             result = subprocess.run(
@@ -201,7 +226,7 @@ class OpenSearchInstaller:
                 print(e.stderr)
             return False
 
-    def verify_plugins(self):
+    def plugins_verify(self):
         print(f"\nVerifying {SERVICE_NAME} Plugins...")
         try:
             result = subprocess.run(
@@ -302,7 +327,7 @@ class OpenSearchInstaller:
             print(f"✗ Error verifying configuration: {str(e)}")
             return False
 
-    def update_opensearch_config(self):
+    def opensearch_config_update(self):
         print("\nUpdating configuration...")
         
         # Configuration to add
@@ -443,16 +468,9 @@ plugins.security.disabled: false
             return False
 
     def run_installation(self):
-        self.install_opensearch()
-        self.enable_service()
-        self.start_service()
-        print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
-        time.sleep(30)
-        self.verify_service()
-        self.update_opensearch_config()
-        self.set_jvm_heap()
-        self.verify_api()
-        self.verify_plugins()
+        self.opensearch_install()
+        self.service_wrapper()
+        self.configuration_wrapper()
         if DASHBOARD:
             self.provision_dashboard()
 
@@ -471,9 +489,9 @@ if __name__ == "__main__":
     installer = OpenSearchInstaller(args.version, ADMIN_PASSWORD, debug=args.debug)
 
     if args.api:
-        installer.verify_api()  # Only run API verification
+        installer.api_verify()  # Only run API verification
     elif args.plugins:
-        installer.verify_plugins()  # Only run plugins verification
+        installer.plugins_verify()  # Only run plugins verification
     elif args.checkconfig:
         installer.verify_config()  # Only verify configuration
     elif args.checkjvm:
