@@ -11,7 +11,9 @@ from open_search_install_config import (
     DEFAULT_VERSION, 
     DOWNLOAD_DIR,
     DASHBOARD_VERSION,
-    DASHBOARD_URL
+    DASHBOARD_URL,
+    OPENSEARCH_RPM_URL,
+    OPENSEARCH_RPM_FILENAME
 )
 
 
@@ -28,23 +30,23 @@ class OpenSearchInstaller:
         downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
         os.makedirs(downloads_dir, exist_ok=True)
         
-        rpm_url = f"https://artifacts.opensearch.org/releases/bundle/opensearch/{self.version}/opensearch-{self.version}-linux-x64.rpm"
-        rpm_file = os.path.join(downloads_dir, f"opensearch-{self.version}-linux-x64.rpm")
+        opensearch_rpm_url = OPENSEARCH_RPM_URL(self.version)
+        opensearch_rpm_file = os.path.join(downloads_dir, OPENSEARCH_RPM_FILENAME(self.version))
         
         # Download the RPM file
         try:
-            print(f"Downloading from: {rpm_url}")
+            print(f"Downloading from: {opensearch_rpm_url}")
             print(f"Downloading to: {downloads_dir}")
-            subprocess.run(["curl", "-L", "-o", rpm_file, rpm_url], check=True)
-            print(f"Downloaded OpenSearch RPM to {rpm_file}")
+            subprocess.run(["curl", "-L", "-o", opensearch_rpm_file, opensearch_rpm_url], check=True)
+            print(f"Downloaded OpenSearch RPM to {opensearch_rpm_file}")
             
             # Verify the file exists and has size > 0
-            if not os.path.exists(rpm_file) or os.path.getsize(rpm_file) == 0:
-                raise Exception(f"Download failed or file is empty: {rpm_file}")
+            if not os.path.exists(opensearch_rpm_file) or os.path.getsize(opensearch_rpm_file) == 0:
+                raise Exception(f"Download failed or file is empty: {opensearch_rpm_file}")
                 
             # Set appropriate permissions
-            subprocess.run(["sudo", "chmod", "644", rpm_file], check=True)
-            return rpm_file
+            subprocess.run(["sudo", "chmod", "644", opensearch_rpm_file], check=True)
+            return opensearch_rpm_file
         except Exception as e:
             print(f"Error downloading RPM: {str(e)}")
             raise
