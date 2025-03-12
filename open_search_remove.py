@@ -5,10 +5,17 @@ import subprocess
 import sys
 import shutil
 import argparse
+from open_search_install_config import (
+    OPENSEARCH_VERSION,
+    OPENSEARCH_RPM_FILENAME
+)
 
 class OpenSearchRemover:
     def __init__(self, debug=False):
         self.debug = debug
+        self.rpm_name = OPENSEARCH_RPM_FILENAME(OPENSEARCH_VERSION).replace(".rpm", "")
+        if self.debug:
+            print(f"Debug: RPM to remove: {self.rpm_name}")
 
     def check_root(self):
         """Check if the script is running as root"""
@@ -63,7 +70,7 @@ class OpenSearchRemover:
         print("\nRemoving OpenSearch package...")
         try:
             result = subprocess.run(
-                ["yum", "remove", "opensearch", "-y"],
+                ["yum", "remove", self.rpm_name, "-y"],
                 capture_output=True,
                 text=True,
                 check=True
