@@ -125,30 +125,14 @@ class OpenSearchInstaller:
             print("\nInstalling RPM (this may take a few minutes)...")
             start_time = time.time()
             
-            # Execute installation with proper output handling
-            process = subprocess.Popen(
-                install_cmd,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1
-            )
-
-            # Use communicate() to handle all output and wait for completion
-            stdout, stderr = process.communicate()
+            # Execute installation using os.system
+            return_code = os.system(install_cmd)
             
-            # Print output
-            if stdout:
-                print(stdout)
-            if stderr:
-                print(stderr, file=sys.stderr)
-
             # Check return code
-            if process.returncode != 0:
-                raise subprocess.CalledProcessError(process.returncode, install_cmd)
+            if return_code != 0:
+                raise Exception(f"Installation command failed with return code {return_code}")
 
-            # Add a longer delay to ensure all post-install scripts complete
+            # Add a delay to ensure all post-install scripts complete
             print("\nWaiting for post-installation tasks to complete...")
             time.sleep(10)
             
