@@ -178,6 +178,35 @@ class OpenSearchInstaller:
                 print(e.stderr)
             return False
 
+    def verify_plugins(self):
+        print("\nVerifying OpenSearch Plugins...")
+        try:
+            result = subprocess.run(
+                ["curl", "-X", "GET", "https://localhost:9200/_cat/plugins?v",
+                 "-u", f"admin:{self.admin_password}",
+                 "--insecure",
+                 "--silent"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            print("\nPlugins Response:")
+            print(result.stdout if result.stdout.strip() else "No plugins installed")
+            
+            if self.debug:
+                print("\nDebug: Curl command:")
+                print(f"curl -X GET https://localhost:9200/_cat/plugins?v -u admin:{self.admin_password} --insecure --silent")
+            
+            return True
+                
+        except subprocess.CalledProcessError as e:
+            print("\n✗ OpenSearch Plugins check failed - Service not responding")
+            if e.stderr:
+                print("Error output:")
+                print(e.stderr)
+            return False
+
     def run_installation(self):
         if self.is_windows:
             # For Windows, we'll just download the package
@@ -195,6 +224,7 @@ class OpenSearchInstaller:
             print("\nWaiting 30 seconds for OpenSearch to fully start...")
             time.sleep(30)
             self.verify_api()
+            self.verify_plugins()  # Add plugins check to full installation
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OpenSearch Installer")
@@ -202,6 +232,7 @@ if __name__ == "__main__":
     parser.add_argument("--version", "-v", type=str, default=DEFAULT_VERSION, help="Specify the OpenSearch version to install.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--api", action="store_true", help="Only run the API verification test")
+    parser.add_argument("--plugins", action="store_true", help="Only run the plugins endpoint test")
     
     args = parser.parse_args()
     
@@ -209,6 +240,8 @@ if __name__ == "__main__":
 
     if args.api:
         installer.verify_api()  # Only run API verification
+    elif args.plugins:
+        installer.verify_plugins()  # Only run plugins verification
     elif args.download:
         installer.download_opensearch()  # Only download the package
     else:
