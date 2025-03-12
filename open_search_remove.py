@@ -80,8 +80,26 @@ class OpenSearchRemover:
         """Remove package using yum"""
         print(f"\nRemoving {service_name} package...")
         try:
+            # Try removing by RPM name first
             result = subprocess.run(
                 ["yum", "remove", rpm_name, "-y"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if self.debug:
+                print("\nYum remove output:")
+                print(result.stdout)
+            print(f"✓ {service_name} package removed")
+            return
+        except subprocess.CalledProcessError as e:
+            if self.debug:
+                print(f"Failed to remove by RPM name {rpm_name}, trying service name...")
+
+        # If RPM name fails, try service name
+        try:
+            result = subprocess.run(
+                ["yum", "remove", service_name, "-y"],
                 capture_output=True,
                 text=True,
                 check=True
