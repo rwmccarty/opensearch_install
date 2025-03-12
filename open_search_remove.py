@@ -7,7 +7,8 @@ import shutil
 import argparse
 from open_search_install_config import (
     OPENSEARCH_VERSION,
-    OPENSEARCH_RPM_FILENAME
+    OPENSEARCH_RPM_FILENAME,
+    CONFIG_DIR
 )
 
 class OpenSearchRemover:
@@ -16,6 +17,7 @@ class OpenSearchRemover:
         self.rpm_name = OPENSEARCH_RPM_FILENAME(OPENSEARCH_VERSION).replace(".rpm", "")
         if self.debug:
             print(f"Debug: RPM to remove: {self.rpm_name}")
+            print(f"Debug: Config directory to remove: {CONFIG_DIR}")
 
     def check_root(self):
         """Check if the script is running as root"""
@@ -90,20 +92,19 @@ class OpenSearchRemover:
             sys.exit(1)
 
     def remove_config_directory(self):
-        """Remove /etc/opensearch directory"""
-        config_dir = "/etc/opensearch"
-        print(f"\nRemoving {config_dir} directory...")
-        if os.path.exists(config_dir):
+        """Remove configuration directory"""
+        print(f"\nRemoving {CONFIG_DIR} directory...")
+        if os.path.exists(CONFIG_DIR):
             try:
-                shutil.rmtree(config_dir)
-                print(f"✓ Removed {config_dir}")
+                shutil.rmtree(CONFIG_DIR)
+                print(f"✓ Removed {CONFIG_DIR}")
             except Exception as e:
-                print(f"❌ Failed to remove {config_dir}")
+                print(f"❌ Failed to remove {CONFIG_DIR}")
                 if self.debug:
                     print(f"Error: {str(e)}")
                 sys.exit(1)
         else:
-            print(f"Directory {config_dir} does not exist")
+            print(f"Directory {CONFIG_DIR} does not exist")
 
     def run_removal(self):
         """Run the complete removal process"""

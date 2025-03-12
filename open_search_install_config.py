@@ -13,6 +13,7 @@ DASHBOARD = True
 
 # Installation paths and settings
 DOWNLOAD_DIR = "downloads"
+CONFIG_DIR = "/etc/opensearch-dashboards" if DASHBOARD else "/etc/opensearch"
 
 # OpenSearch RPM Configuration
 OPENSEARCH_RPM_FILENAME = lambda version: f"opensearch-{version}-linux-x64.rpm"
