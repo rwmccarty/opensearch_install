@@ -130,40 +130,45 @@ class OpenSearchInstaller:
                         raise subprocess.CalledProcessError(return_code, install_cmd)
                     break
 
-            print("\nWaiting for yum transaction to complete...")
+            print("\nWaiting for RPM transaction to complete...")
             max_transaction_checks = 30
             check_interval = 2
             
             for i in range(max_transaction_checks):
-                # Check if yum is still running
                 try:
-                    yum_check = subprocess.run(
-                        "ps aux | grep -v grep | grep 'yum'",
+                    # Check for any running rpm or yum processes
+                    rpm_check = subprocess.run(
+                        "ps aux | grep -v grep | egrep 'rpm|yum'",
                         shell=True,
                         text=True,
                         capture_output=True
                     )
-                    if yum_check.returncode != 0:
-                        # No yum process found, check if package is installed
-                        verify_result = subprocess.run(
-                            f"rpm -q {SERVICE_NAME}",
-                            shell=True,
-                            text=True,
-                            capture_output=True
-                        )
-                        if verify_result.returncode == 0:
-                            print(f"\n✓ {SERVICE_NAME} RPM installed successfully")
-                            if self.debug:
-                                print("Installed package:", verify_result.stdout.strip())
-                            break
+                    
+                    # Check if package is fully installed and queryable
+                    verify_result = subprocess.run(
+                        f"rpm -q {SERVICE_NAME} && rpm -V {SERVICE_NAME}",
+                        shell=True,
+                        text=True,
+                        capture_output=True
+                    )
+                    
+                    # If no rpm/yum processes are running AND we can query the package
+                    if rpm_check.returncode != 0 and verify_result.returncode == 0:
+                        print(f"\n✓ {SERVICE_NAME} RPM transaction completed successfully")
+                        if self.debug:
+                            print("Installed package:", verify_result.stdout.strip())
+                        break
+                    else:
+                        print(f"Installation still in progress... (check {i + 1}/{max_transaction_checks})")
+                        if self.debug and verify_result.stderr:
+                            print("Verification output:", verify_result.stderr)
                 except Exception as e:
-                    print(f"Error checking yum process: {e}")
+                    print(f"Error checking installation status: {e}")
                 
                 if i < max_transaction_checks - 1:
-                    print(f"Installation still in progress... (check {i + 1}/{max_transaction_checks})")
                     time.sleep(check_interval)
                 else:
-                    raise Exception("Installation timed out waiting for yum transaction to complete")
+                    raise Exception("Installation timed out waiting for RPM transaction to complete")
 
             elapsed_time = time.time() - start_time
             print(f"\nInstallation process took {elapsed_time:.1f} seconds")
@@ -173,16 +178,31 @@ class OpenSearchInstaller:
             
             # Final verification
             print("\nPerforming final verification...")
-            verify_result = subprocess.run(
-                f"rpm -q {SERVICE_NAME} && yum list installed {SERVICE_NAME}",
-                shell=True,
-                text=True,
-                capture_output=True
-            )
+            verify_cmds = [
+                f"rpm -q {SERVICE_NAME}",  # Basic package query
+                f"rpm -V {SERVICE_NAME}",  # Verify package files
+                f"yum list installed {SERVICE_NAME}",  # Check yum database
+                "rpm -qa | grep opensearch"  # List all opensearch packages
+            ]
             
-            if verify_result.returncode == 0:
-                print(f"\n✓ Final verification passed. {SERVICE_NAME} is installed and registered:")
-                print(verify_result.stdout.strip())
+            all_passed = True
+            for cmd in verify_cmds:
+                result = subprocess.run(
+                    cmd,
+                    shell=True,
+                    text=True,
+                    capture_output=True
+                )
+                if result.returncode != 0:
+                    print(f"✗ Verification failed for: {cmd}")
+                    print(result.stderr)
+                    all_passed = False
+                elif self.debug:
+                    print(f"\nDebug: {cmd} output:")
+                    print(result.stdout)
+            
+            if all_passed:
+                print(f"\n✓ Final verification passed. {SERVICE_NAME} is fully installed and verified.")
             else:
                 raise Exception("Final verification failed - package not properly installed")
                 
