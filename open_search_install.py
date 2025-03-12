@@ -422,11 +422,11 @@ plugins.security.disabled: false
         self.install_opensearch()
         self.enable_service()
         self.start_service()
+        print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
+        time.sleep(30)
         self.verify_service()
         self.update_opensearch_config()
         self.set_jvm_heap()
-        print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
-        time.sleep(30)
         self.verify_api()
         self.verify_plugins()
         if DASHBOARD:
