@@ -59,41 +59,55 @@ class OpenSearchInstaller:
         try:
             # First check for and install dependencies
             print("Checking and installing dependencies...")
-            os.system("yum install java-11-openjdk-devel -y")
+            subprocess.run(["yum", "install", "java-11-openjdk-devel", "-y"], 
+                         check=True,
+                         text=True,
+                         stdout=sys.stdout,
+                         stderr=sys.stderr)
             
-            # Then install the RPM with verbose output and environment variable
-            print(f"Installing {SERVICE_NAME} RPM from {rpm_file}...")
+            # Then install the RPM with verbose output
+            print(f"\nInstalling {SERVICE_NAME} RPM from {rpm_file}...")
             
-            # Set the environment variable in our process
-            os.environ['OPENSEARCH_INITIAL_ADMIN_PASSWORD'] = self.admin_password
-            
-            # Run the installation directly to see output in real-time
-            print("\nInstalling RPM (this may take a few minutes)...")
-            install_cmd = f"yum localinstall {rpm_file} -y --verbose --nogpgcheck"
+            # Prepare the installation command with password
+            install_cmd = ["yum", "localinstall", rpm_file, "-y", "--verbose", "--nogpgcheck", 
+                         f"--setopt=OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password}"]
             
             if self.debug:
                 print("\nDebug: Executing command:")
                 print("----------------------------------------")
-                print(install_cmd)
+                print(" ".join(install_cmd))
                 print("----------------------------------------\n")
                 input("Press Enter to continue...")
             
-            ret = os.system(install_cmd)
-            
-            if ret != 0:
-                raise Exception(f"RPM installation failed with return code: {ret}")
+            # Run the installation with real-time output
+            print("\nInstalling RPM (this may take a few minutes)...")
+            result = subprocess.run(install_cmd,
+                                 check=True,
+                                 text=True,
+                                 stdout=sys.stdout,
+                                 stderr=sys.stderr)
             
             # Verify RPM installation
             print("\nVerifying RPM installation...")
-            verify_cmd = f"rpm -qa | grep {SERVICE_NAME}"
-            verify_ret = os.system(verify_cmd)
+            verify_result = subprocess.run(["rpm", "-qa", "|", "grep", SERVICE_NAME],
+                                        shell=True,  # Needed for pipe operation
+                                        text=True,
+                                        capture_output=True)
             
-            if verify_ret != 0:
+            if verify_result.returncode != 0:
                 print("\nInstallation verification failed")
                 raise Exception("RPM installation verification failed")
             else:
                 print(f"\n✓ {SERVICE_NAME} RPM installed successfully")
+                if self.debug:
+                    print("Installed package:", verify_result.stdout.strip())
                 
+        except subprocess.CalledProcessError as e:
+            print(f"\nInstallation failed with return code {e.returncode}")
+            if e.stderr:
+                print("Error output:")
+                print(e.stderr)
+            raise Exception(f"Installation failed: {str(e)}")
         except Exception as e:
             print(f"\nInstallation failed: {str(e)}")
             raise
