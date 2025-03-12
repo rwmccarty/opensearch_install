@@ -135,10 +135,11 @@ class OpenSearchInstaller:
     def verify_api(self):
         print("\nVerifying OpenSearch API...")
         try:
-            curl_cmd = f"curl -X GET https://localhost:9200 -u 'admin:{self.admin_password}' --insecure --silent"
             result = subprocess.run(
-                curl_cmd,
-                shell=True,
+                ["curl", "-X", "GET", "https://localhost:9200",
+                 "-u", f"admin:{self.admin_password}",  # Remove the extra quotes
+                 "--insecure",
+                 "--silent"],
                 capture_output=True,
                 text=True,
                 check=True
@@ -146,6 +147,10 @@ class OpenSearchInstaller:
             
             print("\nAPI Response:")
             print(result.stdout)
+            
+            if self.debug:
+                print("\nDebug: Curl command:")
+                print(f"curl -X GET https://localhost:9200 -u admin:{self.admin_password} --insecure --silent")
             
             try:
                 import json
@@ -161,6 +166,9 @@ class OpenSearchInstaller:
                     return False
             except json.JSONDecodeError:
                 print("\n✗ OpenSearch API check failed - Invalid JSON response")
+                if self.debug:
+                    print("Raw response received:")
+                    print(repr(result.stdout))  # Print exact string representation
                 return False
                 
         except subprocess.CalledProcessError as e:
