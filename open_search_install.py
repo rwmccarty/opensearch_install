@@ -319,6 +319,85 @@ plugins.security.disabled: false
             print(f"✗ Error updating OpenSearch configuration: {str(e)}")
             raise
 
+    def set_jvm_heap(self):
+        print("\nUpdating JVM heap settings...")
+        jvm_file = "/etc/opensearch/jvm.options"
+        
+        try:
+            # Read existing JVM options
+            with open(jvm_file, 'r') as f:
+                lines = f.readlines()
+            
+            # Remove existing Xms and Xmx settings
+            new_lines = []
+            for line in lines:
+                if not line.strip().startswith('-Xms') and not line.strip().startswith('-Xmx'):
+                    new_lines.append(line)
+            
+            # Add our heap settings
+            new_lines.append('-Xms8g\n')
+            new_lines.append('-Xmx8g\n')
+            
+            # Write updated config
+            with open(jvm_file, 'w') as f:
+                f.writelines(new_lines)
+            
+            print("✓ JVM heap settings updated successfully")
+            
+            if self.debug:
+                print("\nDebug: Updated JVM settings:")
+                print(''.join(new_lines))
+            
+            # Verify the settings after update
+            self.check_jvm_heap()
+                
+        except Exception as e:
+            print(f"✗ Error updating JVM heap settings: {str(e)}")
+            raise
+
+    def check_jvm_heap(self):
+        print("\nVerifying JVM heap settings...")
+        jvm_file = "/etc/opensearch/jvm.options"
+        required_settings = {
+            '-Xms': '8g',
+            '-Xmx': '8g'
+        }
+        
+        try:
+            with open(jvm_file, 'r') as f:
+                lines = f.readlines()
+            
+            found_settings = {}
+            for line in lines:
+                line = line.strip()
+                if line.startswith('-Xms'):
+                    found_settings['-Xms'] = line[4:]
+                elif line.startswith('-Xmx'):
+                    found_settings['-Xmx'] = line[4:]
+            
+            # Check if all required settings are present and correct
+            all_correct = True
+            for key, expected_value in required_settings.items():
+                if key not in found_settings:
+                    print(f"✗ Missing setting: {key}")
+                    all_correct = False
+                elif found_settings[key] != expected_value:
+                    print(f"✗ Incorrect value for {key}. Expected: {expected_value}, Found: {found_settings[key]}")
+                    all_correct = False
+                elif self.debug:
+                    print(f"✓ Verified {key}: {found_settings[key]}")
+            
+            if all_correct:
+                print("✓ All JVM heap settings are correct")
+                return True
+            else:
+                print("✗ Some JVM heap settings are missing or incorrect")
+                return False
+                
+        except Exception as e:
+            print(f"✗ Error verifying JVM heap settings: {str(e)}")
+            return False
+
     def run_installation(self):
         if self.is_windows:
             # For Windows, we'll just download the package
@@ -330,6 +409,7 @@ plugins.security.disabled: false
         else:
             self.install_opensearch()
             self.update_opensearch_config()  # Add configuration update
+            self.set_jvm_heap()  # Add JVM heap configuration
             self.enable_service()
             self.start_service()
             self.verify_service()
@@ -347,6 +427,7 @@ if __name__ == "__main__":
     parser.add_argument("--api", action="store_true", help="Only run the API verification test")
     parser.add_argument("--plugins", action="store_true", help="Only run the plugins endpoint test")
     parser.add_argument("--checkconfig", action="store_true", help="Verify OpenSearch configuration settings")
+    parser.add_argument("--checkjvm", action="store_true", help="Verify JVM heap settings")
     
     args = parser.parse_args()
     
@@ -358,6 +439,8 @@ if __name__ == "__main__":
         installer.verify_plugins()  # Only run plugins verification
     elif args.checkconfig:
         installer.verify_config()  # Only verify configuration
+    elif args.checkjvm:
+        installer.check_jvm_heap()  # Only verify JVM settings
     elif args.download:
         installer.download_opensearch()  # Only download the package
     else:
