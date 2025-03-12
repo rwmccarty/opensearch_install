@@ -47,21 +47,32 @@ class OpenSearchInstaller:
             print("Checking and installing dependencies...")
             subprocess.run(["sudo", "yum", "install", "java-11-openjdk-devel", "-y"], check=True)
             
-            # Then install the RPM
+            # Then install the RPM with verbose output
             print("Installing OpenSearch RPM...")
-            result = subprocess.run(["sudo", "yum", "localinstall", rpm_file, "-y"], 
+            result = subprocess.run(["sudo", "yum", "localinstall", rpm_file, "-y", "--verbose", "--nogpgcheck"], 
                                   capture_output=True, 
                                   text=True)
             
             if result.returncode != 0:
-                print("Installation failed. Error output:")
+                print("\nInstallation failed. Full output:")
+                print("\nSTDOUT:")
+                print(result.stdout)
+                print("\nSTDERR:")
                 print(result.stderr)
                 raise Exception("RPM installation failed")
+            else:
+                print("\nInstallation output:")
+                print(result.stdout)
                 
         except subprocess.CalledProcessError as e:
-            print(f"Installation failed: {str(e)}")
-            if e.output:
-                print(f"Error output: {e.output}")
+            print(f"\nInstallation failed: {str(e)}")
+            print("\nCommand output:")
+            if hasattr(e, 'stdout') and e.stdout:
+                print("\nSTDOUT:")
+                print(e.stdout)
+            if hasattr(e, 'stderr') and e.stderr:
+                print("\nSTDERR:")
+                print(e.stderr)
             raise
 
     def enable_service(self):
