@@ -59,11 +59,13 @@ class OpenSearchInstaller:
         try:
             # First check for and install dependencies
             print("Checking and installing dependencies...")
+            start_time = time.time()
             subprocess.run(["yum", "install", "java-11-openjdk-devel", "-y"], 
                          check=True,
                          text=True,
                          stdout=sys.stdout,
                          stderr=sys.stderr)
+            print(f"Dependencies installation took {time.time() - start_time:.1f} seconds")
             
             # Then install the RPM with verbose output
             print(f"\nInstalling {SERVICE_NAME} RPM from {rpm_file}...")
@@ -80,27 +82,64 @@ class OpenSearchInstaller:
             
             # Run the installation with real-time output
             print("\nInstalling RPM (this may take a few minutes)...")
+            start_time = time.time()
+            
+            # First check if package is already installed
+            check_cmd = f"rpm -q opensearch-dashboards"
+            check_result = subprocess.run(check_cmd, 
+                                        shell=True, 
+                                        text=True,
+                                        capture_output=True)
+            
+            if check_result.returncode == 0:
+                print(f"Found existing installation: {check_result.stdout.strip()}")
+                print("Removing existing package...")
+                remove_cmd = "yum remove -y opensearch-dashboards"
+                subprocess.run(remove_cmd,
+                             shell=True,
+                             check=True,
+                             text=True,
+                             stdout=sys.stdout,
+                             stderr=sys.stderr)
+                print("✓ Existing package removed")
+            
+            print("\nStarting fresh installation...")
             result = subprocess.run(install_cmd,
-                                 shell=True,  # Needed when using full command string
+                                 shell=True,
                                  check=True,
                                  text=True,
                                  stdout=sys.stdout,
                                  stderr=sys.stderr)
             
+            elapsed_time = time.time() - start_time
+            print(f"\nInstallation process took {elapsed_time:.1f} seconds")
+            
+            # Add a small delay to ensure package database is updated
+            time.sleep(2)
+            
             # Verify RPM installation
             print("\nVerifying RPM installation...")
-            verify_result = subprocess.run(["rpm", "-qa", "|", "grep", SERVICE_NAME],
-                                        shell=True,  # Needed for pipe operation
-                                        text=True,
-                                        capture_output=True)
+            max_retries = 3
+            retry_delay = 2
             
-            if verify_result.returncode != 0:
-                print("\nInstallation verification failed")
-                raise Exception("RPM installation verification failed")
-            else:
-                print(f"\n✓ {SERVICE_NAME} RPM installed successfully")
-                if self.debug:
-                    print("Installed package:", verify_result.stdout.strip())
+            for attempt in range(max_retries):
+                verify_result = subprocess.run(f"rpm -q opensearch-dashboards",
+                                            shell=True,
+                                            text=True,
+                                            capture_output=True)
+                
+                if verify_result.returncode == 0:
+                    print(f"\n✓ {SERVICE_NAME} RPM installed successfully")
+                    if self.debug:
+                        print("Installed package:", verify_result.stdout.strip())
+                    break
+                else:
+                    if attempt < max_retries - 1:
+                        print(f"Verification attempt {attempt + 1} failed, waiting {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                    else:
+                        print("\nInstallation verification failed")
+                        raise Exception("RPM installation verification failed")
                 
         except subprocess.CalledProcessError as e:
             print(f"\nInstallation failed with return code {e.returncode}")
