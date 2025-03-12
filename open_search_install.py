@@ -67,6 +67,7 @@ class OpenSearchInstaller:
             # Construct the command with environment variable
             install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
+            
             if self.debug:
                 print("\nDebug: Executing command:")
                 print("----------------------------------------")
@@ -419,11 +420,11 @@ plugins.security.disabled: false
 
     def run_installation(self):
         self.install_opensearch()
-        self.set_jvm_heap()
         self.enable_service()
         self.start_service()
         self.verify_service()
         self.update_opensearch_config()
+        self.set_jvm_heap()
         print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
         time.sleep(30)
         self.verify_api()
