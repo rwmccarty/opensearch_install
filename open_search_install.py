@@ -187,8 +187,7 @@ class OpenSearchInstaller:
     def configuration_wrapper(self):
         """Wrapper function to handle all configuration and verification steps"""
         self.opensearch_config_update()
-        if not DASHBOARD:
-            self.set_jvm_heap()
+        self.set_jvm_heap()
         self.api_verify()
         self.plugins_verify()
 
@@ -484,8 +483,7 @@ plugins.security.disabled: false
         self.opensearch_install()
         self.service_wrapper()
         self.configuration_wrapper()
-        if DASHBOARD:
-            self.provision_dashboard()
+        self.provision_dashboard()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=f"{SERVICE_NAME} Installer")
