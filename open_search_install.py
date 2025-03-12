@@ -2,10 +2,10 @@
 
 import os
 import subprocess
-import getpass  # Importing getpass for secure password input
 import argparse  # Importing argparse for command-line argument parsing
 import platform  # For detecting OS
 import sys
+from open_search_install_config import ADMIN_PASSWORD, DEFAULT_VERSION, DOWNLOAD_DIR
 
 
 class OpenSearchInstaller:
@@ -17,7 +17,7 @@ class OpenSearchInstaller:
     def download_opensearch(self):
         print("Downloading OpenSearch RPM...")
         # Create downloads directory if it doesn't exist
-        downloads_dir = os.path.join(os.getcwd(), "downloads")
+        downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
         os.makedirs(downloads_dir, exist_ok=True)
         
         rpm_url = f"https://artifacts.opensearch.org/releases/bundle/opensearch/{self.version}/opensearch-{self.version}-linux-x64.rpm"
@@ -144,16 +144,11 @@ class OpenSearchInstaller:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OpenSearch Installer")
     parser.add_argument("--download", "-d", action="store_true", help="Download OpenSearch package only, do not install or start the service.")
-    parser.add_argument("--version", "-v", type=str, default="2.19.1", help="Specify the OpenSearch version to install.")
+    parser.add_argument("--version", "-v", type=str, default=DEFAULT_VERSION, help="Specify the OpenSearch version to install.")
     
     args = parser.parse_args()
     
-    # Only prompt for password if we're doing a full installation
-    admin_password = None
-    if not args.download:
-        admin_password = getpass.getpass("Enter the OpenSearch admin password: ")  # Prompt for password
-    
-    installer = OpenSearchInstaller(args.version, admin_password)
+    installer = OpenSearchInstaller(args.version, ADMIN_PASSWORD)
 
     if args.download:
         installer.download_opensearch()  # Only download the package
