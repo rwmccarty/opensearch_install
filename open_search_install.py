@@ -26,7 +26,7 @@ class OpenSearchInstaller:
         self.debug = debug
 
     def download_opensearch(self):
-        print("Downloading OpenSearch RPM...")
+        print(f"Downloading {SERVICE_NAME} RPM...")
         # Create downloads directory if it doesn't exist
         downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
         os.makedirs(downloads_dir, exist_ok=True)
@@ -39,7 +39,7 @@ class OpenSearchInstaller:
             print(f"Downloading from: {opensearch_rpm_url}")
             print(f"Downloading to: {downloads_dir}")
             subprocess.run(["curl", "-L", "-o", opensearch_rpm_file, opensearch_rpm_url], check=True)
-            print(f"Downloaded OpenSearch RPM to {opensearch_rpm_file}")
+            print(f"Downloaded {SERVICE_NAME} RPM to {opensearch_rpm_file}")
             
             # Verify the file exists and has size > 0
             if not os.path.exists(opensearch_rpm_file) or os.path.getsize(opensearch_rpm_file) == 0:
@@ -54,7 +54,7 @@ class OpenSearchInstaller:
 
     def install_opensearch(self):
         rpm_file = self.download_opensearch()  # Ensure the RPM is downloaded before installation
-        print("Installing OpenSearch...")
+        print(f"Installing {SERVICE_NAME}...")
         
         try:
             # First check for and install dependencies
@@ -62,7 +62,7 @@ class OpenSearchInstaller:
             subprocess.run(["sudo", "yum", "install", "java-11-openjdk-devel", "-y"], check=True)
             
             # Then install the RPM with verbose output and environment variable
-            print(f"Installing OpenSearch RPM from {rpm_file}...")
+            print(f"Installing {SERVICE_NAME} RPM from {rpm_file}...")
             
             # Construct the command with environment variable
             install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
@@ -107,35 +107,35 @@ class OpenSearchInstaller:
             raise
 
     def enable_service(self):
-        print("Enabling OpenSearch service...")
+        print(f"Enabling {SERVICE_NAME} service...")
         try:
-            subprocess.run(["sudo", "systemctl", "enable", "opensearch"], check=True)
+            subprocess.run(["sudo", "systemctl", "enable", SERVICE_NAME], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error enabling OpenSearch service: {e}")
+            print(f"Error enabling {SERVICE_NAME} service: {e}")
             sys.exit(1)
 
     def start_service(self):
-        print("Starting OpenSearch service...")
+        print(f"Starting {SERVICE_NAME} service...")
         try:
-            subprocess.run(["sudo", "systemctl", "start", "opensearch"], check=True)
+            subprocess.run(["sudo", "systemctl", "start", SERVICE_NAME], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error starting OpenSearch service: {e}")
+            print(f"Error starting {SERVICE_NAME} service: {e}")
             sys.exit(1)
 
     def verify_service(self):
-        print("Verifying OpenSearch service status...")
+        print(f"Verifying {SERVICE_NAME} service status...")
         try:
-            subprocess.run(["sudo", "systemctl", "status", "opensearch"], check=True)
+            subprocess.run(["sudo", "systemctl", "status", SERVICE_NAME], check=True)
         except subprocess.CalledProcessError as e:
-            print(f"Error verifying OpenSearch service: {e}")
+            print(f"Error verifying {SERVICE_NAME} service: {e}")
             sys.exit(1)
 
     def verify_api(self):
-        print("\nVerifying OpenSearch API...")
+        print(f"\nVerifying {SERVICE_NAME} API...")
         try:
             result = subprocess.run(
                 ["curl", "-X", "GET", "https://localhost:9200",
-                 "-u", f"admin:{self.admin_password}",  # Remove the extra quotes
+                 "-u", f"admin:{self.admin_password}",
                  "--insecure",
                  "--silent"],
                 capture_output=True,
@@ -154,30 +154,30 @@ class OpenSearchInstaller:
                 import json
                 response = json.loads(result.stdout)
                 if response.get("tagline") == "The OpenSearch Project: https://opensearch.org/":
-                    print("\n✓ OpenSearch API check passed - Service is running and responding correctly")
+                    print(f"\n✓ {SERVICE_NAME} API check passed - Service is running and responding correctly")
                     print(f"Version: {response.get('version', {}).get('number', 'unknown')}")
                     print(f"Cluster name: {response.get('cluster_name', 'unknown')}")
                     return True
                 else:
-                    print("\n✗ OpenSearch API check failed - Unexpected response")
+                    print(f"\n✗ {SERVICE_NAME} API check failed - Unexpected response")
                     print("Expected tagline not found in response")
                     return False
             except json.JSONDecodeError:
-                print("\n✗ OpenSearch API check failed - Invalid JSON response")
+                print(f"\n✗ {SERVICE_NAME} API check failed - Invalid JSON response")
                 if self.debug:
                     print("Raw response received:")
-                    print(repr(result.stdout))  # Print exact string representation
+                    print(repr(result.stdout))
                 return False
                 
         except subprocess.CalledProcessError as e:
-            print("\n✗ OpenSearch API check failed - Service not responding")
+            print(f"\n✗ {SERVICE_NAME} API check failed - Service not responding")
             if e.stderr:
                 print("Error output:")
                 print(e.stderr)
             return False
 
     def verify_plugins(self):
-        print("\nVerifying OpenSearch Plugins...")
+        print(f"\nVerifying {SERVICE_NAME} Plugins...")
         try:
             result = subprocess.run(
                 ["curl", "-X", "GET", "https://localhost:9200/_cat/plugins?v",
@@ -199,39 +199,39 @@ class OpenSearchInstaller:
             return True
                 
         except subprocess.CalledProcessError as e:
-            print("\n✗ OpenSearch Plugins check failed - Service not responding")
+            print(f"\n✗ {SERVICE_NAME} Plugins check failed - Service not responding")
             if e.stderr:
                 print("Error output:")
                 print(e.stderr)
             return False
 
     def provision_dashboard(self):
-        """Provision the OpenSearch Dashboard service"""
-        print("\nProvisioning OpenSearch Dashboard...")
+        """Provision the Dashboard service"""
+        print(f"\nProvisioning {SERVICE_NAME}...")
         try:
             # Enable the dashboard service
-            print("Enabling OpenSearch Dashboard service...")
-            subprocess.run(["sudo", "systemctl", "enable", "opensearch-dashboards"], check=True)
+            print(f"Enabling {SERVICE_NAME} service...")
+            subprocess.run(["sudo", "systemctl", "enable", SERVICE_NAME], check=True)
             
             # Start the dashboard service
-            print("Starting OpenSearch Dashboard service...")
-            subprocess.run(["sudo", "systemctl", "start", "opensearch-dashboards"], check=True)
+            print(f"Starting {SERVICE_NAME} service...")
+            subprocess.run(["sudo", "systemctl", "start", SERVICE_NAME], check=True)
             
             # Verify the dashboard service status
-            print("Verifying OpenSearch Dashboard service status...")
-            subprocess.run(["sudo", "systemctl", "status", "opensearch-dashboards"], check=True)
+            print(f"Verifying {SERVICE_NAME} service status...")
+            subprocess.run(["sudo", "systemctl", "status", SERVICE_NAME], check=True)
             
-            print("✓ OpenSearch Dashboard service provisioned successfully")
+            print(f"✓ {SERVICE_NAME} service provisioned successfully")
             return True
         except subprocess.CalledProcessError as e:
-            print(f"\n✗ Error provisioning OpenSearch Dashboard service: {e}")
+            print(f"\n✗ Error provisioning {SERVICE_NAME} service: {e}")
             if hasattr(e, 'stderr') and e.stderr:
                 print("Error output:")
                 print(e.stderr)
             return False
 
     def verify_config(self):
-        print("\nVerifying OpenSearch configuration...")
+        print(f"\nVerifying {SERVICE_NAME} configuration...")
         required_settings = {
             'network.host': '0.0.0.0',
             'discovery.type': 'single-node',
@@ -424,7 +424,7 @@ plugins.security.disabled: false
         self.enable_service()
         self.start_service()
         self.verify_service()
-        print("\nWaiting 30 seconds for OpenSearch to fully start...")
+        print(f"\nWaiting 30 seconds for {SERVICE_NAME} to fully start...")
         time.sleep(30)
         self.verify_api()
         self.verify_plugins()
@@ -432,13 +432,13 @@ plugins.security.disabled: false
             self.provision_dashboard()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="OpenSearch Installer")
-    parser.add_argument("--download", "-d", action="store_true", help="Download OpenSearch package only, do not install or start the service.")
-    parser.add_argument("--version", "-v", type=str, default=OPENSEARCH_VERSION, help="Specify the OpenSearch version to install.")
+    parser = argparse.ArgumentParser(description=f"{SERVICE_NAME} Installer")
+    parser.add_argument("--download", "-d", action="store_true", help=f"Download {SERVICE_NAME} package only, do not install or start the service.")
+    parser.add_argument("--version", "-v", type=str, default=OPENSEARCH_VERSION, help=f"Specify the {SERVICE_NAME} version to install.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--api", action="store_true", help="Only run the API verification test")
     parser.add_argument("--plugins", action="store_true", help="Only run the plugins endpoint test")
-    parser.add_argument("--checkconfig", action="store_true", help="Verify OpenSearch configuration settings")
+    parser.add_argument("--checkconfig", action="store_true", help=f"Verify {SERVICE_NAME} configuration settings")
     parser.add_argument("--checkjvm", action="store_true", help="Verify JVM heap settings")
     
     args = parser.parse_args()
