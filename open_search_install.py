@@ -193,12 +193,15 @@ if __name__ == "__main__":
     parser.add_argument("--download", "-d", action="store_true", help="Download OpenSearch package only, do not install or start the service.")
     parser.add_argument("--version", "-v", type=str, default=DEFAULT_VERSION, help="Specify the OpenSearch version to install.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument("--api", action="store_true", help="Only run the API verification test")
     
     args = parser.parse_args()
     
     installer = OpenSearchInstaller(args.version, ADMIN_PASSWORD, debug=args.debug)
 
-    if args.download:
+    if args.api:
+        installer.verify_api()  # Only run API verification
+    elif args.download:
         installer.download_opensearch()  # Only download the package
     else:
         installer.run_installation()  # Proceed with installation and service management
