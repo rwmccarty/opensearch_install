@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 import os
 import subprocess
 import getpass  # Importing getpass for secure password input
@@ -54,7 +55,11 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    admin_password = getpass.getpass("Enter the OpenSearch admin password: ")  # Prompt for password
+    # Only prompt for password if we're doing a full installation
+    admin_password = None
+    if not args.download:
+        admin_password = getpass.getpass("Enter the OpenSearch admin password: ")  # Prompt for password
+    
     installer = OpenSearchInstaller(args.version, admin_password)
 
     if args.download:
