@@ -94,13 +94,42 @@ class OpenSearchInstaller:
             print("\nInstalling RPM (this may take a few minutes)...")
             start_time = time.time()
             
-            result = subprocess.run(install_cmd,
-                                 shell=True,
-                                 check=True,
-                                 text=True,
-                                 stdout=sys.stdout,
-                                 stderr=sys.stderr)
-            
+            # Use Popen to get more control over the process
+            process = subprocess.Popen(
+                install_cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+
+            # Poll process while printing output in real-time
+            while True:
+                output = process.stdout.readline()
+                if output:
+                    print(output.strip())
+                error = process.stderr.readline()
+                if error:
+                    print(error.strip(), file=sys.stderr)
+                
+                # Check if process has finished
+                return_code = process.poll()
+                if return_code is not None:
+                    # Process has completed
+                    # Print any remaining output
+                    for output in process.stdout.readlines():
+                        if output:
+                            print(output.strip())
+                    for error in process.stderr.readlines():
+                        if error:
+                            print(error.strip(), file=sys.stderr)
+                    
+                    if return_code != 0:
+                        raise subprocess.CalledProcessError(return_code, install_cmd)
+                    break
+
             elapsed_time = time.time() - start_time
             print(f"\nInstallation process took {elapsed_time:.1f} seconds")
             
