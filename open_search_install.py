@@ -11,8 +11,12 @@ class OpenSearchInstaller:
         self.admin_password = admin_password
     def download_opensearch(self):
         print("Downloading OpenSearch RPM...")
+        # Create downloads directory if it doesn't exist
+        downloads_dir = os.path.join(os.getcwd(), "downloads")
+        os.makedirs(downloads_dir, exist_ok=True)
+        
         rpm_url = f"https://artifacts.opensearch.org/releases/bundle/opensearch/{self.version}/rpm/opensearch-{self.version}-1.x86_64.rpm"
-        rpm_file = f"/tmp/opensearch-{self.version}-1.x86_64.rpm"
+        rpm_file = os.path.join(downloads_dir, f"opensearch-{self.version}-1.x86_64.rpm")
         
         # Download the RPM file
         subprocess.run(["curl", "-L", "-o", rpm_file, rpm_url], check=True)
@@ -21,7 +25,8 @@ class OpenSearchInstaller:
     def install_opensearch(self):
         self.download_opensearch()  # Ensure the RPM is downloaded before installation
         print("Installing OpenSearch...")
-        rpm_file = f"/tmp/opensearch-{self.version}-1.x86_64.rpm"
+        downloads_dir = os.path.join(os.getcwd(), "downloads")
+        rpm_file = os.path.join(downloads_dir, f"opensearch-{self.version}-1.x86_64.rpm")
         subprocess.run(["sudo", "yum", "localinstall", rpm_file, "-y"], check=True)
 
     def enable_service(self):
