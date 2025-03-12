@@ -59,7 +59,7 @@ class OpenSearchInstaller:
         try:
             # First check for and install dependencies
             print("Checking and installing dependencies...")
-            subprocess.run(["sudo", "yum", "install", "java-11-openjdk-devel", "-y"], check=True)
+            os.system("yum install java-11-openjdk-devel -y")
             
             # Then install the RPM with verbose output and environment variable
             print(f"Installing {SERVICE_NAME} RPM from {rpm_file}...")
@@ -74,54 +74,26 @@ class OpenSearchInstaller:
                 print("----------------------------------------\n")
                 input("Press Enter to continue...")
             
-            # Run the installation and wait for completion
+            # Run the installation directly
             print("\nInstalling RPM (this may take a few minutes)...")
-            result = subprocess.run(
-                install_cmd,
-                shell=True,
-                capture_output=True,
-                text=True,
-                check=True  # This will raise CalledProcessError if return code is non-zero
-            )
+            ret = os.system(install_cmd)
             
-            if self.debug:
-                print("\nDebug: Command completed with return code:", result.returncode)
+            if ret != 0:
+                raise Exception(f"RPM installation failed with return code: {ret}")
             
             # Verify RPM installation
             print("\nVerifying RPM installation...")
-            # List all installed packages and grep for our service
             verify_cmd = f"rpm -qa | grep {SERVICE_NAME}"
-            verify_result = subprocess.run(
-                verify_cmd,
-                shell=True,
-                capture_output=True,
-                text=True
-            )
+            verify_ret = os.system(verify_cmd)
             
-            if verify_result.returncode != 0:
-                print("\nInstallation verification failed. Full output:")
-                if self.debug:
-                    print("\nSTDOUT:")
-                    print(result.stdout)
-                    print("\nSTDERR:")
-                    print(result.stderr)
+            if verify_ret != 0:
+                print("\nInstallation verification failed")
                 raise Exception("RPM installation verification failed")
             else:
                 print(f"\n✓ {SERVICE_NAME} RPM installed successfully")
-                print(f"Installed package: {verify_result.stdout.strip()}")
-                if self.debug:
-                    print("\nInstallation output:")
-                    print(result.stdout)
                 
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             print(f"\nInstallation failed: {str(e)}")
-            print("\nCommand output:")
-            if hasattr(e, 'stdout') and e.stdout:
-                print("\nSTDOUT:")
-                print(e.stdout)
-            if hasattr(e, 'stderr') and e.stderr:
-                print("\nSTDERR:")
-                print(e.stderr)
             raise
 
     def enable_service(self):
