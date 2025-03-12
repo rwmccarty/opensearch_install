@@ -126,14 +126,32 @@ class OpenSearchInstaller:
             start_time = time.time()
             
             # Execute installation with proper output handling
-            subprocess.run(
+            process = subprocess.Popen(
                 install_cmd,
                 shell=True,
-                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                stdout=sys.stdout,
-                stderr=sys.stderr
+                bufsize=1,
+                universal_newlines=True
             )
+
+            # Read output in real-time
+            while True:
+                output = process.stdout.readline()
+                if output:
+                    print(output.rstrip())
+                error = process.stderr.readline()
+                if error:
+                    print(error.rstrip(), file=sys.stderr)
+                # If process is finished and no more output, break
+                if output == '' and error == '' and process.poll() is not None:
+                    break
+
+            # Wait for process to complete and check return code
+            return_code = process.wait()
+            if return_code != 0:
+                raise subprocess.CalledProcessError(return_code, install_cmd)
 
             # Add a small delay to ensure package database is updated
             time.sleep(2)
