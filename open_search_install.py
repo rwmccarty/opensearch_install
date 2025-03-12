@@ -207,6 +207,54 @@ class OpenSearchInstaller:
                 print(e.stderr)
             return False
 
+    def verify_config(self):
+        print("\nVerifying OpenSearch configuration...")
+        config_file = "/etc/opensearch/opensearch.yml"
+        required_settings = {
+            'network.host': '0.0.0.0',
+            'discovery.type': 'single-node',
+            'plugins.security.disabled': 'false'
+        }
+        
+        try:
+            with open(config_file, 'r') as f:
+                config_content = f.read()
+            
+            # Parse the YAML content line by line to handle comments
+            lines = config_content.split('\n')
+            found_settings = {}
+            
+            for line in lines:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    if ': ' in line:
+                        key, value = line.split(': ', 1)
+                        if key in required_settings:
+                            found_settings[key] = value
+            
+            # Check if all required settings are present and correct
+            all_correct = True
+            for key, expected_value in required_settings.items():
+                if key not in found_settings:
+                    print(f"✗ Missing setting: {key}")
+                    all_correct = False
+                elif found_settings[key] != expected_value:
+                    print(f"✗ Incorrect value for {key}. Expected: {expected_value}, Found: {found_settings[key]}")
+                    all_correct = False
+                elif self.debug:
+                    print(f"✓ Verified {key}: {found_settings[key]}")
+            
+            if all_correct:
+                print("✓ All OpenSearch configuration settings are correct")
+                return True
+            else:
+                print("✗ Some OpenSearch configuration settings are missing or incorrect")
+                return False
+                
+        except Exception as e:
+            print(f"✗ Error verifying OpenSearch configuration: {str(e)}")
+            return False
+
     def update_opensearch_config(self):
         print("\nUpdating OpenSearch configuration...")
         config_file = "/etc/opensearch/opensearch.yml"
@@ -263,6 +311,9 @@ plugins.security.disabled: false
             if self.debug:
                 print("\nDebug: Updated configuration:")
                 print(updated_config)
+            
+            # Verify the configuration after update
+            self.verify_config()
                 
         except Exception as e:
             print(f"✗ Error updating OpenSearch configuration: {str(e)}")
@@ -295,6 +346,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--api", action="store_true", help="Only run the API verification test")
     parser.add_argument("--plugins", action="store_true", help="Only run the plugins endpoint test")
+    parser.add_argument("--checkconfig", action="store_true", help="Verify OpenSearch configuration settings")
     
     args = parser.parse_args()
     
@@ -304,6 +356,8 @@ if __name__ == "__main__":
         installer.verify_api()  # Only run API verification
     elif args.plugins:
         installer.verify_plugins()  # Only run plugins verification
+    elif args.checkconfig:
+        installer.verify_config()  # Only verify configuration
     elif args.download:
         installer.download_opensearch()  # Only download the package
     else:
