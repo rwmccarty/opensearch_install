@@ -11,7 +11,8 @@ from open_search_install_config import (
     OPENSEARCH_VERSION, 
     DOWNLOAD_DIR,
     OPENSEARCH_RPM_URL,
-    OPENSEARCH_RPM_FILENAME
+    OPENSEARCH_RPM_FILENAME,
+    DASHBOARD
 )
 
 class OpenSearchInstaller:
@@ -196,6 +197,31 @@ class OpenSearchInstaller:
         except subprocess.CalledProcessError as e:
             print("\n✗ OpenSearch Plugins check failed - Service not responding")
             if e.stderr:
+                print("Error output:")
+                print(e.stderr)
+            return False
+
+    def provision_dashboard(self):
+        """Provision the OpenSearch Dashboard service"""
+        print("\nProvisioning OpenSearch Dashboard...")
+        try:
+            # Enable the dashboard service
+            print("Enabling OpenSearch Dashboard service...")
+            subprocess.run(["sudo", "systemctl", "enable", "opensearch-dashboards"], check=True)
+            
+            # Start the dashboard service
+            print("Starting OpenSearch Dashboard service...")
+            subprocess.run(["sudo", "systemctl", "start", "opensearch-dashboards"], check=True)
+            
+            # Verify the dashboard service status
+            print("Verifying OpenSearch Dashboard service status...")
+            subprocess.run(["sudo", "systemctl", "status", "opensearch-dashboards"], check=True)
+            
+            print("✓ OpenSearch Dashboard service provisioned successfully")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"\n✗ Error provisioning OpenSearch Dashboard service: {e}")
+            if hasattr(e, 'stderr') and e.stderr:
                 print("Error output:")
                 print(e.stderr)
             return False
@@ -402,6 +428,8 @@ plugins.security.disabled: false
         time.sleep(30)
         self.verify_api()
         self.verify_plugins()
+        if DASHBOARD:
+            self.provision_dashboard()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="OpenSearch Installer")
