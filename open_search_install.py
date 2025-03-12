@@ -51,14 +51,15 @@ class OpenSearchInstaller:
             
             # Then install the RPM with verbose output and environment variable
             print(f"Installing OpenSearch RPM from {rpm_file}...")
-            env = os.environ.copy()  # Copy current environment
-            env["OPENSEARCH_INITIAL_ADMIN_PASSWORD"] = self.admin_password  # Add our password
+            
+            # Construct the command with environment variable
+            install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} sudo yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
             result = subprocess.run(
-                ["sudo", "-E", "yum", "localinstall", rpm_file, "-y", "--verbose", "--nogpgcheck"],
+                install_cmd,
+                shell=True,
                 capture_output=True,
-                text=True,
-                env=env
+                text=True
             )
             
             if result.returncode != 0:
@@ -128,8 +129,6 @@ class OpenSearchInstaller:
             print("2. Run opensearch.bat from the extracted directory")
             print("3. Follow the OpenSearch documentation for Windows configuration")
         else:
-            # Set password in environment before installation
-            os.environ["OPENSEARCH_INITIAL_ADMIN_PASSWORD"] = self.admin_password
             self.install_opensearch()
             self.enable_service()
             self.start_service()
