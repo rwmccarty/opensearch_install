@@ -5,8 +5,8 @@
 # Admin password for OpenSearch
 ADMIN_PASSWORD = "asdfASDF1234-"
 
-# Default version if not specified
-DEFAULT_VERSION = "2.19.1"
+# OpenSearch version
+OPENSEARCH_VERSION = "2.19.1"
 
 # Installation paths and settings
 DOWNLOAD_DIR = "downloads"
