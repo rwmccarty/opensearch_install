@@ -8,7 +8,8 @@ import argparse
 from open_search_install_config import (
     OPENSEARCH_VERSION,
     OPENSEARCH_RPM_FILENAME,
-    CONFIG_DIR
+    CONFIG_DIR,
+    SERVICE_NAME
 )
 
 class OpenSearchRemover:
@@ -18,6 +19,7 @@ class OpenSearchRemover:
         if self.debug:
             print(f"Debug: RPM to remove: {self.rpm_name}")
             print(f"Debug: Config directory to remove: {CONFIG_DIR}")
+            print(f"Debug: Service name to manage: {SERVICE_NAME}")
 
     def check_root(self):
         """Check if the script is running as root"""
@@ -29,10 +31,10 @@ class OpenSearchRemover:
             print("✓ Running as root")
 
     def check_service_status(self):
-        """Check if OpenSearch service is running"""
+        """Check if service is running"""
         try:
             result = subprocess.run(
-                ["systemctl", "is-active", "opensearch"],
+                ["systemctl", "is-active", SERVICE_NAME],
                 capture_output=True,
                 text=True
             )
@@ -41,35 +43,35 @@ class OpenSearchRemover:
             return False
 
     def stop_service(self):
-        """Stop the OpenSearch service if it's running"""
-        print("\nChecking OpenSearch service status...")
+        """Stop the service if it's running"""
+        print(f"\nChecking {SERVICE_NAME} service status...")
         if self.check_service_status():
-            print("OpenSearch service is running. Stopping service...")
+            print(f"{SERVICE_NAME} service is running. Stopping service...")
             try:
-                subprocess.run(["systemctl", "stop", "opensearch"], check=True)
-                print("✓ OpenSearch service stopped")
+                subprocess.run(["systemctl", "stop", SERVICE_NAME], check=True)
+                print(f"✓ {SERVICE_NAME} service stopped")
             except subprocess.CalledProcessError as e:
-                print("❌ Failed to stop OpenSearch service")
+                print(f"❌ Failed to stop {SERVICE_NAME} service")
                 if self.debug:
                     print(f"Error: {str(e)}")
                 sys.exit(1)
         else:
-            print("OpenSearch service is not running")
+            print(f"{SERVICE_NAME} service is not running")
 
     def disable_service(self):
-        """Disable the OpenSearch service"""
-        print("\nDisabling OpenSearch service...")
+        """Disable the service"""
+        print(f"\nDisabling {SERVICE_NAME} service...")
         try:
-            subprocess.run(["systemctl", "disable", "opensearch"], check=True)
-            print("✓ OpenSearch service disabled")
+            subprocess.run(["systemctl", "disable", SERVICE_NAME], check=True)
+            print(f"✓ {SERVICE_NAME} service disabled")
         except subprocess.CalledProcessError as e:
-            print("❌ Failed to disable OpenSearch service")
+            print(f"❌ Failed to disable {SERVICE_NAME} service")
             if self.debug:
                 print(f"Error: {str(e)}")
 
     def remove_package(self):
-        """Remove OpenSearch package using yum"""
-        print("\nRemoving OpenSearch package...")
+        """Remove package using yum"""
+        print(f"\nRemoving {SERVICE_NAME} package...")
         try:
             result = subprocess.run(
                 ["yum", "remove", self.rpm_name, "-y"],
@@ -80,9 +82,9 @@ class OpenSearchRemover:
             if self.debug:
                 print("\nYum remove output:")
                 print(result.stdout)
-            print("✓ OpenSearch package removed")
+            print(f"✓ {SERVICE_NAME} package removed")
         except subprocess.CalledProcessError as e:
-            print("❌ Failed to remove OpenSearch package")
+            print(f"❌ Failed to remove {SERVICE_NAME} package")
             if self.debug:
                 print(f"Error: {str(e)}")
                 if e.stdout:
