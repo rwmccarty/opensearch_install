@@ -16,89 +16,6 @@ from open_search_install_config import (
     OPENSEARCH_RPM_FILENAME
 )
 
-class DashboardInstaller:
-    def __init__(self, admin_password, debug=False):
-        self.admin_password = admin_password
-        self.debug = debug
-
-    def download_dashboard(self):
-        print("Downloading OpenSearch Dashboard RPM...")
-        # Create downloads directory if it doesn't exist
-        downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
-        os.makedirs(downloads_dir, exist_ok=True)
-        
-        rpm_file = os.path.join(downloads_dir, f"opensearch-dashboards-{DASHBOARD_VERSION}-linux-x64.rpm")
-        
-        # Download the RPM file
-        try:
-            print(f"Downloading from: {DASHBOARD_URL}")
-            subprocess.run(["curl", "-L", "-o", rpm_file, DASHBOARD_URL], check=True)
-            print(f"Downloaded OpenSearch Dashboard RPM to {rpm_file}")
-            
-            # Verify the file exists and has size > 0
-            if not os.path.exists(rpm_file) or os.path.getsize(rpm_file) == 0:
-                raise Exception(f"Download failed or file is empty: {rpm_file}")
-                
-            # Set appropriate permissions
-            subprocess.run(["sudo", "chmod", "644", rpm_file], check=True)
-            return rpm_file
-        except Exception as e:
-            print(f"Error downloading Dashboard RPM: {str(e)}")
-            raise
-
-    def install_dashboard(self):
-        rpm_file = self.download_dashboard()  # Ensure the RPM is downloaded before installation
-        print("Installing OpenSearch Dashboard...")
-        
-        try:
-            print(f"Installing Dashboard RPM from {rpm_file}...")
-            
-            # Install the RPM with verbose output
-            install_cmd = f"yum localinstall {rpm_file} -y --verbose --nogpgcheck"
-            
-            if self.debug:
-                print("\nDebug: Executing command:")
-                print("----------------------------------------")
-                print(install_cmd)
-                print("----------------------------------------\n")
-                input("Press Enter to continue...")
-            
-            result = subprocess.run(
-                install_cmd,
-                shell=True,
-                capture_output=True,
-                text=True
-            )
-            
-            if self.debug:
-                print("\nDebug: Command completed with return code:", result.returncode)
-            
-            if result.returncode != 0:
-                print("\nDashboard installation failed. Full output:")
-                print("\nSTDOUT:")
-                print(result.stdout)
-                print("\nSTDERR:")
-                print(result.stderr)
-                raise Exception("Dashboard RPM installation failed")
-            else:
-                print("\nDashboard installation output:")
-                print(result.stdout)
-                
-        except subprocess.CalledProcessError as e:
-            print(f"\nDashboard installation failed: {str(e)}")
-            print("\nCommand output:")
-            if hasattr(e, 'stdout') and e.stdout:
-                print("\nSTDOUT:")
-                print(e.stdout)
-            if hasattr(e, 'stderr') and e.stderr:
-                print("\nSTDERR:")
-                print(e.stderr)
-            raise
-
-    def run_installation(self):
-        self.install_dashboard()
-        print("\nDashboard installation completed")
-
 class OpenSearchInstaller:
     def __init__(self, version, admin_password, debug=False):
         self.version = version
@@ -501,7 +418,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     installer = OpenSearchInstaller(args.version, ADMIN_PASSWORD, debug=args.debug)
-    dashboard_installer = DashboardInstaller(ADMIN_PASSWORD, debug=args.debug)
 
     if args.api:
         installer.verify_api()  # Only run API verification
@@ -512,8 +428,7 @@ if __name__ == "__main__":
     elif args.checkjvm:
         installer.check_jvm_heap()  # Only verify JVM settings
     elif args.download:
-        print("Downloading OpenSearch and Dashboard packages...")
+        print("Downloading OpenSearch package...")
         installer.download_opensearch()  # Download OpenSearch package
-        dashboard_installer.download_dashboard()  # Download dashboard package
     else:
         installer.run_installation()  # Proceed with installation and service management
