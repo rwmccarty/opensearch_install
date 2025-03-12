@@ -149,15 +149,26 @@ class OpenSearchInstaller:
                 print("\nDebug: API Response:")
                 print(result.stdout)
             
-            # Check for the tagline anywhere in the response
-            if "The OpenSearch Project: https://opensearch.org/" in result.stdout:
-                print("✓ OpenSearch API check passed - Service is running and responding correctly")
-                return True
-            else:
-                print("✗ OpenSearch API check failed - Unexpected response")
+            try:
+                import json
+                response = json.loads(result.stdout)
+                if response.get("tagline") == "The OpenSearch Project: https://opensearch.org/":
+                    print("✓ OpenSearch API check passed - Service is running and responding correctly")
+                    if self.debug:
+                        print(f"Version: {response.get('version', {}).get('number', 'unknown')}")
+                        print(f"Cluster name: {response.get('cluster_name', 'unknown')}")
+                    return True
+                else:
+                    print("✗ OpenSearch API check failed - Unexpected response")
+                    if self.debug:
+                        print("Expected tagline not found in response")
+                        print("Full response:")
+                        print(json.dumps(response, indent=2))
+                    return False
+            except json.JSONDecodeError:
+                print("✗ OpenSearch API check failed - Invalid JSON response")
                 if self.debug:
-                    print("Expected tagline not found in response")
-                    print("Full response:")
+                    print("Raw response:")
                     print(result.stdout)
                 return False
                 
