@@ -68,20 +68,20 @@ class OpenSearchInstaller:
             # Then install the RPM with verbose output
             print(f"\nInstalling {SERVICE_NAME} RPM from {rpm_file}...")
             
-            # Prepare the installation command with password
-            install_cmd = ["yum", "localinstall", rpm_file, "-y", "--verbose", "--nogpgcheck", 
-                         f"--setopt=OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password}"]
+            # Prepare the installation command with password in the command string
+            install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
             if self.debug:
                 print("\nDebug: Executing command:")
                 print("----------------------------------------")
-                print(" ".join(install_cmd))
+                print(install_cmd)
                 print("----------------------------------------\n")
                 input("Press Enter to continue...")
             
             # Run the installation with real-time output
             print("\nInstalling RPM (this may take a few minutes)...")
             result = subprocess.run(install_cmd,
+                                 shell=True,  # Needed when using full command string
                                  check=True,
                                  text=True,
                                  stdout=sys.stdout,
