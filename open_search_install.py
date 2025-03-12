@@ -89,7 +89,8 @@ class OpenSearchInstaller:
             
             # Verify RPM installation
             print("\nVerifying RPM installation...")
-            verify_cmd = f"rpm -q opensearch"
+            # List all installed packages and grep for our service
+            verify_cmd = f"rpm -qa | grep {SERVICE_NAME}"
             verify_result = subprocess.run(
                 verify_cmd,
                 shell=True,
@@ -99,14 +100,15 @@ class OpenSearchInstaller:
             
             if verify_result.returncode != 0:
                 print("\nInstallation verification failed. Full output:")
-                print("\nSTDOUT:")
-                print(result.stdout)
-                print("\nSTDERR:")
-                print(result.stderr)
+                if self.debug:
+                    print("\nSTDOUT:")
+                    print(result.stdout)
+                    print("\nSTDERR:")
+                    print(result.stderr)
                 raise Exception("RPM installation verification failed")
             else:
                 print(f"\n✓ {SERVICE_NAME} RPM installed successfully")
-                print(f"Installed version: {verify_result.stdout.strip()}")
+                print(f"Installed package: {verify_result.stdout.strip()}")
                 if self.debug:
                     print("\nInstallation output:")
                     print(result.stdout)
