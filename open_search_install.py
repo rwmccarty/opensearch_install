@@ -64,8 +64,12 @@ class OpenSearchInstaller:
             # Then install the RPM with verbose output and environment variable
             print(f"Installing {SERVICE_NAME} RPM from {rpm_file}...")
             
-            # Construct the command with environment variable
-            install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
+            # Set the environment variable in our process
+            os.environ['OPENSEARCH_INITIAL_ADMIN_PASSWORD'] = self.admin_password
+            
+            # Run the installation directly to see output in real-time
+            print("\nInstalling RPM (this may take a few minutes)...")
+            install_cmd = f"yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
             if self.debug:
                 print("\nDebug: Executing command:")
@@ -74,8 +78,6 @@ class OpenSearchInstaller:
                 print("----------------------------------------\n")
                 input("Press Enter to continue...")
             
-            # Run the installation directly
-            print("\nInstalling RPM (this may take a few minutes)...")
             ret = os.system(install_cmd)
             
             if ret != 0:
