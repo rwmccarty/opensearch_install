@@ -205,7 +205,8 @@ class OpenSearchInstaller:
     def configuration_wrapper(self):
         """Wrapper function to handle all configuration and verification steps"""
         self.opensearch_config_update()
-        self.set_jvm_heap()
+        if not DASHBOARD:
+            self.set_jvm_heap()
         self.api_verify()
         self.plugins_verify()
 
