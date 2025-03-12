@@ -18,7 +18,7 @@ DOWNLOAD_DIR = "downloads"
 if DASHBOARD:
     CONFIG_DIR = "/etc/opensearch-dashboards"
     SERVICE_NAME = "opensearch-dashboards"
-    CONFIG_FILE = f"{CONFIG_DIR}/opensearch-dashboards.yml"
+    CONFIG_FILE = f"{CONFIG_DIR}/opensearch_dashboards.yml"
     JVM_FILE = f"{CONFIG_DIR}/jvm.options"
     OPENSEARCH_RPM_FILENAME = lambda version: f"opensearch-dashboards-{version}-linux-x64.rpm"
     OPENSEARCH_RPM_URL = lambda version: f"https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/{version}/opensearch-dashboards-{version}-linux-x64.rpm"
