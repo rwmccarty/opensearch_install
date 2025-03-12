@@ -59,7 +59,7 @@ class OpenSearchInstaller:
             print("----------------------------------------")
             print(install_cmd)
             print("----------------------------------------\n")
-            
+            input("Press Enter to continue...")
             result = subprocess.run(
                 install_cmd,
                 shell=True,
