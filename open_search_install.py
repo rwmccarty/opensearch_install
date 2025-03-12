@@ -135,11 +135,10 @@ class OpenSearchInstaller:
     def verify_api(self):
         print("\nVerifying OpenSearch API...")
         try:
+            curl_cmd = f"curl -X GET https://localhost:9200 -u 'admin:{self.admin_password}' --insecure --silent"
             result = subprocess.run(
-                ["curl", "-X", "GET", "https://localhost:9200", 
-                 "-u", f"'admin:{self.admin_password}'",  # Added single quotes around credentials
-                 "--insecure",
-                 "--silent"],  # Add silent to get clean output
+                curl_cmd,
+                shell=True,
                 capture_output=True,
                 text=True,
                 check=True
