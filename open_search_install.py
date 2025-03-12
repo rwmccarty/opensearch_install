@@ -132,54 +132,42 @@ class OpenSearchInstaller:
             if return_code != 0:
                 raise Exception(f"Installation command failed with return code {return_code}")
 
-            # Add a delay to ensure all post-install scripts complete
-            print("\nWaiting for post-installation tasks to complete...")
-            time.sleep(10)
-            
-            # Final verification
-            print("\nPerforming final verification...")
-            
-            # First verify the package is installed and in the database
-            basic_verify_cmds = [
-                f"rpm -q {OPENSEARCH_SERVICE_NAME}",  # Basic package query
-                f"yum list installed {OPENSEARCH_SERVICE_NAME}",  # Check yum database
-                "rpm -qa | grep opensearch"  # List all opensearch packages
-            ]
-            
-            all_passed = True
-            for cmd in basic_verify_cmds:
-                result = subprocess.run(
-                    cmd,
+            print("\nVerifying installation completion...")
+            max_attempts = 90  # Maximum number of attempts
+            attempt = 0
+            while attempt < max_attempts:
+                attempt += 1
+                print(f"\nVerification attempt {attempt}/{max_attempts}")
+                
+                # Check 1: Package installed in yum
+                yum_check = subprocess.run(
+                    "yum list installed opensearch",
                     shell=True,
-                    text=True,
-                    capture_output=True
-                )
-                if result.returncode != 0:
-                    print(f"✗ Basic verification failed for: {cmd}")
-                    print(result.stderr)
-                    all_passed = False
-                elif self.debug:
-                    print(f"\nDebug: {cmd} output:")
-                    print(result.stdout)
+                    capture_output=True,
+                    text=True
+                ).returncode == 0
+                
+                # Check 2: Config file exists
+                config_check = os.path.exists(OPENSEARCH_CONFIG_FILE)
+                
+                # Check 3: JVM file exists
+                jvm_check = os.path.exists(OPENSEARCH_JVM_FILE)
+                
+                # Print status
+                print(f"✓ Package installed: {'Yes' if yum_check else 'No'}")
+                print(f"✓ Config file exists: {'Yes' if config_check else 'No'}")
+                print(f"✓ JVM file exists: {'Yes' if jvm_check else 'No'}")
+                
+                if yum_check and config_check and jvm_check:
+                    print("\n✓ All installation checks passed!")
+                    elapsed_time = time.time() - start_time
+                    print(f"Installation process took {elapsed_time:.1f} seconds")
+                    return
+                
+                print("Waiting for installation to complete...")
+                time.sleep(2)  # Wait 2 seconds between checks
             
-            # Run rpm -V separately as it may show expected modifications
-            verify_result = subprocess.run(
-                f"rpm -V {OPENSEARCH_SERVICE_NAME}",
-                shell=True,
-                text=True,
-                capture_output=True
-            )
-            
-            if verify_result.returncode != 0 and self.debug:
-                print("\nNote: rpm verify shows file modifications (this is often expected):")
-                print(verify_result.stdout if verify_result.stdout else verify_result.stderr)
-            
-            if all_passed:
-                elapsed_time = time.time() - start_time
-                print(f"\n✓ Final verification passed. {OPENSEARCH_SERVICE_NAME} is fully installed and registered.")
-                print(f"Installation process took {elapsed_time:.1f} seconds")
-            else:
-                raise Exception("Final verification failed - package not properly installed")
+            raise Exception("Installation verification timed out - required files not found")
                 
         except subprocess.CalledProcessError as e:
             print(f"\nInstallation failed with return code {e.returncode}")
