@@ -7,7 +7,6 @@ class OpenSearchInstaller:
     def __init__(self, version, admin_password):
         self.version = version
         self.admin_password = admin_password
-password
     def download_opensearch(self):
         print("Downloading OpenSearch RPM...")
         rpm_url = f"https://artifacts.opensearch.org/releases/bundle/opensearch/{self.version}/rpm/opensearch-{self.version}-1.x86_64.rpm"
