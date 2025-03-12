@@ -49,11 +49,17 @@ class OpenSearchInstaller:
             print("Checking and installing dependencies...")
             subprocess.run(["sudo", "yum", "install", "java-11-openjdk-devel", "-y"], check=True)
             
-            # Then install the RPM with verbose output
+            # Then install the RPM with verbose output and environment variable
             print(f"Installing OpenSearch RPM from {rpm_file}...")
-            result = subprocess.run(["sudo", "yum", "localinstall", rpm_file, "-y", "--verbose", "--nogpgcheck"], 
-                                  capture_output=True, 
-                                  text=True)
+            env = os.environ.copy()  # Copy current environment
+            env["OPENSEARCH_INITIAL_ADMIN_PASSWORD"] = self.admin_password  # Add our password
+            
+            result = subprocess.run(
+                ["sudo", "-E", "yum", "localinstall", rpm_file, "-y", "--verbose", "--nogpgcheck"],
+                capture_output=True,
+                text=True,
+                env=env
+            )
             
             if result.returncode != 0:
                 print("\nInstallation failed. Full output:")
@@ -122,6 +128,8 @@ class OpenSearchInstaller:
             print("2. Run opensearch.bat from the extracted directory")
             print("3. Follow the OpenSearch documentation for Windows configuration")
         else:
+            # Set password in environment before installation
+            os.environ["OPENSEARCH_INITIAL_ADMIN_PASSWORD"] = self.admin_password
             self.install_opensearch()
             self.enable_service()
             self.start_service()
