@@ -12,6 +12,10 @@ from open_search_install_config import (
     DOWNLOAD_DIR,
     OPENSEARCH_RPM_URL,
     OPENSEARCH_RPM_FILENAME,
+    CONFIG_DIR,
+    CONFIG_FILE,
+    JVM_FILE,
+    SERVICE_NAME,
     DASHBOARD
 )
 
@@ -228,7 +232,6 @@ class OpenSearchInstaller:
 
     def verify_config(self):
         print("\nVerifying OpenSearch configuration...")
-        config_file = "/etc/opensearch/opensearch.yml"
         required_settings = {
             'network.host': '0.0.0.0',
             'discovery.type': 'single-node',
@@ -236,7 +239,7 @@ class OpenSearchInstaller:
         }
         
         try:
-            with open(config_file, 'r') as f:
+            with open(CONFIG_FILE, 'r') as f:
                 config_content = f.read()
             
             # Parse the YAML content line by line to handle comments
@@ -264,23 +267,22 @@ class OpenSearchInstaller:
                     print(f"✓ Verified {key}: {found_settings[key]}")
             
             if all_correct:
-                print("✓ All OpenSearch configuration settings are correct")
+                print("✓ All configuration settings are correct")
                 return True
             else:
-                print("✗ Some OpenSearch configuration settings are missing or incorrect")
+                print("✗ Some configuration settings are missing or incorrect")
                 return False
                 
         except Exception as e:
-            print(f"✗ Error verifying OpenSearch configuration: {str(e)}")
+            print(f"✗ Error verifying configuration: {str(e)}")
             return False
 
     def update_opensearch_config(self):
-        print("\nUpdating OpenSearch configuration...")
-        config_file = "/etc/opensearch/opensearch.yml"
+        print("\nUpdating configuration...")
         
         # Configuration to add
         new_config = """
-# Bind OpenSearch to the correct network interface. Use 0.0.0.0
+# Bind to the correct network interface. Use 0.0.0.0
 # to include all available interfaces or specify an IP address
 # assigned to a specific interface.
 network.host: 0.0.0.0
@@ -296,7 +298,7 @@ plugins.security.disabled: false
 """
         try:
             # Read existing config
-            with open(config_file, 'r') as f:
+            with open(CONFIG_FILE, 'r') as f:
                 existing_config = f.read()
 
             # Remove any existing settings we're about to add
@@ -322,10 +324,10 @@ plugins.security.disabled: false
             updated_config = '\n'.join(filtered_lines).strip() + new_config
 
             # Write updated config
-            with open(config_file, 'w') as f:
+            with open(CONFIG_FILE, 'w') as f:
                 f.write(updated_config)
 
-            print("✓ OpenSearch configuration updated successfully")
+            print("✓ Configuration updated successfully")
             
             if self.debug:
                 print("\nDebug: Updated configuration:")
@@ -335,16 +337,15 @@ plugins.security.disabled: false
             self.verify_config()
                 
         except Exception as e:
-            print(f"✗ Error updating OpenSearch configuration: {str(e)}")
+            print(f"✗ Error updating configuration: {str(e)}")
             raise
 
     def set_jvm_heap(self):
         print("\nUpdating JVM heap settings...")
-        jvm_file = "/etc/opensearch/jvm.options"
         
         try:
             # Read existing JVM options
-            with open(jvm_file, 'r') as f:
+            with open(JVM_FILE, 'r') as f:
                 lines = f.readlines()
             
             # Remove existing Xms and Xmx settings
@@ -358,7 +359,7 @@ plugins.security.disabled: false
             new_lines.append('-Xmx8g\n')
             
             # Write updated config
-            with open(jvm_file, 'w') as f:
+            with open(JVM_FILE, 'w') as f:
                 f.writelines(new_lines)
             
             print("✓ JVM heap settings updated successfully")
@@ -376,14 +377,13 @@ plugins.security.disabled: false
 
     def check_jvm_heap(self):
         print("\nVerifying JVM heap settings...")
-        jvm_file = "/etc/opensearch/jvm.options"
         required_settings = {
             '-Xms': '8g',
             '-Xmx': '8g'
         }
         
         try:
-            with open(jvm_file, 'r') as f:
+            with open(JVM_FILE, 'r') as f:
                 lines = f.readlines()
             
             found_settings = {}
