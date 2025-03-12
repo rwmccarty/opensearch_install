@@ -67,7 +67,6 @@ class OpenSearchInstaller:
             # Construct the command with environment variable
             install_cmd = f"OPENSEARCH_INITIAL_ADMIN_PASSWORD={self.admin_password} yum localinstall {rpm_file} -y --verbose --nogpgcheck"
             
-            
             if self.debug:
                 print("\nDebug: Executing command:")
                 print("----------------------------------------")
@@ -75,26 +74,42 @@ class OpenSearchInstaller:
                 print("----------------------------------------\n")
                 input("Press Enter to continue...")
             
+            # Run the installation and wait for completion
+            print("\nInstalling RPM (this may take a few minutes)...")
             result = subprocess.run(
                 install_cmd,
                 shell=True,
                 capture_output=True,
-                text=True
+                text=True,
+                check=True  # This will raise CalledProcessError if return code is non-zero
             )
             
             if self.debug:
                 print("\nDebug: Command completed with return code:", result.returncode)
             
-            if result.returncode != 0:
-                print("\nInstallation failed. Full output:")
+            # Verify RPM installation
+            print("\nVerifying RPM installation...")
+            verify_cmd = f"rpm -q opensearch"
+            verify_result = subprocess.run(
+                verify_cmd,
+                shell=True,
+                capture_output=True,
+                text=True
+            )
+            
+            if verify_result.returncode != 0:
+                print("\nInstallation verification failed. Full output:")
                 print("\nSTDOUT:")
                 print(result.stdout)
                 print("\nSTDERR:")
                 print(result.stderr)
-                raise Exception("RPM installation failed")
+                raise Exception("RPM installation verification failed")
             else:
-                print("\nInstallation output:")
-                print(result.stdout)
+                print(f"\n✓ {SERVICE_NAME} RPM installed successfully")
+                print(f"Installed version: {verify_result.stdout.strip()}")
+                if self.debug:
+                    print("\nInstallation output:")
+                    print(result.stdout)
                 
         except subprocess.CalledProcessError as e:
             print(f"\nInstallation failed: {str(e)}")
