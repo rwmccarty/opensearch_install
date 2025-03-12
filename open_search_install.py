@@ -46,46 +46,6 @@ class DashboardInstaller:
             print(f"Error downloading Dashboard RPM: {str(e)}")
             raise
 
-    def run_installation(self):
-        self.download_dashboard()
-        print("\nFor Linux installation:")
-        print("1. Extract the downloaded zip file")
-        print("2. Run opensearch.bat from the extracted directory")
-        print("3. Follow the OpenSearch documentation for Linux configuration")
-
-class OpenSearchInstaller:
-    def __init__(self, version, admin_password, debug=False):
-        self.version = version
-        self.admin_password = admin_password
-        self.debug = debug
-
-    def download_opensearch(self):
-        print("Downloading OpenSearch RPM...")
-        # Create downloads directory if it doesn't exist
-        downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
-        os.makedirs(downloads_dir, exist_ok=True)
-        
-        opensearch_rpm_url = OPENSEARCH_RPM_URL(self.version)
-        opensearch_rpm_file = os.path.join(downloads_dir, OPENSEARCH_RPM_FILENAME(self.version))
-        
-        # Download the RPM file
-        try:
-            print(f"Downloading from: {opensearch_rpm_url}")
-            print(f"Downloading to: {downloads_dir}")
-            subprocess.run(["curl", "-L", "-o", opensearch_rpm_file, opensearch_rpm_url], check=True)
-            print(f"Downloaded OpenSearch RPM to {opensearch_rpm_file}")
-            
-            # Verify the file exists and has size > 0
-            if not os.path.exists(opensearch_rpm_file) or os.path.getsize(opensearch_rpm_file) == 0:
-                raise Exception(f"Download failed or file is empty: {opensearch_rpm_file}")
-                
-            # Set appropriate permissions
-            subprocess.run(["sudo", "chmod", "644", opensearch_rpm_file], check=True)
-            return opensearch_rpm_file
-        except Exception as e:
-            print(f"Error downloading RPM: {str(e)}")
-            raise
-
     def install_dashboard(self):
         rpm_file = self.download_dashboard()  # Ensure the RPM is downloaded before installation
         print("Installing OpenSearch Dashboard...")
@@ -133,6 +93,43 @@ class OpenSearchInstaller:
             if hasattr(e, 'stderr') and e.stderr:
                 print("\nSTDERR:")
                 print(e.stderr)
+            raise
+
+    def run_installation(self):
+        self.install_dashboard()
+        print("\nDashboard installation completed")
+
+class OpenSearchInstaller:
+    def __init__(self, version, admin_password, debug=False):
+        self.version = version
+        self.admin_password = admin_password
+        self.debug = debug
+
+    def download_opensearch(self):
+        print("Downloading OpenSearch RPM...")
+        # Create downloads directory if it doesn't exist
+        downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
+        os.makedirs(downloads_dir, exist_ok=True)
+        
+        opensearch_rpm_url = OPENSEARCH_RPM_URL(self.version)
+        opensearch_rpm_file = os.path.join(downloads_dir, OPENSEARCH_RPM_FILENAME(self.version))
+        
+        # Download the RPM file
+        try:
+            print(f"Downloading from: {opensearch_rpm_url}")
+            print(f"Downloading to: {downloads_dir}")
+            subprocess.run(["curl", "-L", "-o", opensearch_rpm_file, opensearch_rpm_url], check=True)
+            print(f"Downloaded OpenSearch RPM to {opensearch_rpm_file}")
+            
+            # Verify the file exists and has size > 0
+            if not os.path.exists(opensearch_rpm_file) or os.path.getsize(opensearch_rpm_file) == 0:
+                raise Exception(f"Download failed or file is empty: {opensearch_rpm_file}")
+                
+            # Set appropriate permissions
+            subprocess.run(["sudo", "chmod", "644", opensearch_rpm_file], check=True)
+            return opensearch_rpm_file
+        except Exception as e:
+            print(f"Error downloading RPM: {str(e)}")
             raise
 
     def install_opensearch(self):
