@@ -6,6 +6,7 @@ import argparse  # Importing argparse for command-line argument parsing
 import platform  # For detecting OS
 import sys
 import time  # For sleep during startup
+import psutil  # For process monitoring
 from open_search_install_config import (
     ADMIN_PASSWORD, 
     OPENSEARCH_VERSION, 
@@ -140,49 +141,46 @@ class OpenSearchInstaller:
                 text=True
             )
             
-            print(f"Started shell process with PID: {process.pid}")
+            pid = process.pid
+            print(f"Started shell process with PID: {pid}")
+            
+            # Function to check if process or any of its children are running
+            def is_running(pid):
+                try:
+                    process = psutil.Process(pid)
+                    children = process.children(recursive=True)
+                    if process.is_running():
+                        if self.debug:
+                            print(f"Main process {pid} is running")
+                            for child in children:
+                                print(f"Child process {child.pid} ({child.name()}) is running")
+                        return True
+                except psutil.NoSuchProcess:
+                    # Check if any children are still running
+                    for child in psutil.process_iter():
+                        try:
+                            if child.ppid() == pid:
+                                if self.debug:
+                                    print(f"Child process {child.pid} ({child.name()}) is still running")
+                                return True
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
+                    return False
             
             # Monitor the process until it completes
             max_wait = 300  # Maximum wait time in seconds
             start = time.time()
             
             while (time.time() - start) < max_wait:
-                try:
-                    # Check for any yum processes
-                    yum_check = subprocess.run(
-                        "pgrep -f 'yum.*localinstall'",
-                        shell=True,
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    # Check for any rpm processes
-                    rpm_check = subprocess.run(
-                        "pgrep -f 'rpm'",
-                        shell=True,
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    if yum_check.returncode != 0 and rpm_check.returncode != 0:
-                        # No yum or rpm processes found
-                        if process.poll() is not None:
-                            print("Installation processes completed")
-                            break
-                    
-                    # Print active processes
-                    print("\nActive processes:")
-                    if yum_check.stdout:
-                        print("YUM processes:", yum_check.stdout.strip())
-                    if rpm_check.stdout:
-                        print("RPM processes:", rpm_check.stdout.strip())
-                    
-                    time.sleep(5)  # Wait 5 seconds before next check
-                    
-                except Exception as e:
-                    print(f"Error checking process status: {str(e)}")
+                if not is_running(pid):
+                    print("Installation processes completed")
                     break
-            
+                    
+                if self.debug:
+                    print("\nChecking process status...")
+                
+                time.sleep(5)  # Wait 5 seconds before next check
+                
             # Get the final return code
             return_code = process.wait()
             if return_code != 0:
