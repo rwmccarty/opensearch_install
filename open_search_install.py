@@ -147,6 +147,9 @@ class OpenSearchInstaller:
     def verify_installation(self):
         """Verify that the installation completed and all necessary files are present"""
         print("\nVerifying installation completion...")
+        print(f"Config file path: {OPENSEARCH_CONFIG_FILE}")
+        print(f"JVM file path: {OPENSEARCH_JVM_FILE}")
+        
         max_attempts = 90  # Maximum number of attempts
         attempt = 0
         while attempt < max_attempts:
