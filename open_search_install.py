@@ -372,8 +372,42 @@ class OpenSearchInstaller:
 
     def dashboard_install(self):
         """Install and configure the Dashboard service"""
-        print(f"\nInstalling {DASHBOARD_SERVICE_NAME}...")
+        print(f"\nChecking for {DASHBOARD_SERVICE_NAME} RPM...")
+        # Create downloads directory if it doesn't exist
+        downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
+        os.makedirs(downloads_dir, exist_ok=True)
+        
+        dashboard_rpm_url = DASHBOARD_RPM_URL(self.version)
+        dashboard_rpm_file = os.path.join(downloads_dir, DASHBOARD_RPM_FILENAME(self.version))
+        
+        # Check if file already exists and has content
+        if os.path.exists(dashboard_rpm_file) and os.path.getsize(dashboard_rpm_file) > 0:
+            print(f"RPM file already exists at: {dashboard_rpm_file}")
+            print("Skipping download...")
+        else:
+            # Download the RPM file if it doesn't exist
+            try:
+                print(f"Downloading from: {dashboard_rpm_url}")
+                print(f"Downloading to: {downloads_dir}")
+                subprocess.run(["curl", "-L", "-o", dashboard_rpm_file, dashboard_rpm_url], check=True)
+                print(f"Downloaded {DASHBOARD_SERVICE_NAME} RPM to {dashboard_rpm_file}")
+                
+                # Verify the file exists and has size > 0
+                if not os.path.exists(dashboard_rpm_file) or os.path.getsize(dashboard_rpm_file) == 0:
+                    raise Exception(f"Download failed or file is empty: {dashboard_rpm_file}")
+                    
+                # Set appropriate permissions
+                subprocess.run(["sudo", "chmod", "644", dashboard_rpm_file], check=True)
+            except Exception as e:
+                print(f"Error downloading RPM: {str(e)}")
+                raise
+
+        # Now proceed with installation
         try:
+            # Install the RPM
+            print(f"\nInstalling {DASHBOARD_SERVICE_NAME} RPM from {dashboard_rpm_file}...")
+            subprocess.run(["sudo", "yum", "localinstall", dashboard_rpm_file, "-y", "--nogpgcheck"], check=True)
+            
             # Enable the dashboard service
             print(f"Enabling {DASHBOARD_SERVICE_NAME} service...")
             subprocess.run(["sudo", "systemctl", "enable", DASHBOARD_SERVICE_NAME], check=True)
