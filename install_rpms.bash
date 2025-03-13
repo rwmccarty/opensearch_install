@@ -26,12 +26,14 @@ fi
 
 # Read RPMs from config file (only after the RPM List marker)
 RPMS=()
-while IFS= read -r line; do
-    # Skip empty lines and comments
-    if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# ]]; then
+while IFS= read -r line || [ -n "$line" ]; do
+    # Skip empty lines, comments, and the marker line
+    if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# && "$line" =~ \.rpm$ ]]; then
+        # Remove any trailing whitespace
+        line=$(echo "$line" | tr -d '[:space:]')
         RPMS+=("$DOWNLOADS_DIR/$line")
     fi
-done < <(sed -n '/^#.*RPM List/,$p' "$CONFIG_FILE" | tail -n +2)
+done < "$CONFIG_FILE"
 
 # Check if we found any RPMs
 if [ ${#RPMS[@]} -eq 0 ]; then
