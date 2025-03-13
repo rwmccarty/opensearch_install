@@ -149,23 +149,39 @@ class OpenSearchInstaller:
                 try:
                     process = psutil.Process(pid)
                     children = process.children(recursive=True)
-                    if process.is_running():
+                    
+                    # Check if main process is running and not defunct
+                    if process.is_running() and process.status() != psutil.STATUS_ZOMBIE:
                         if self.debug:
-                            print(f"Main process {pid} is running")
+                            print(f"Main process {pid} is running (status: {process.status()})")
                             for child in children:
-                                print(f"Child process {child.pid} ({child.name()}) is running")
+                                try:
+                                    print(f"Child process {child.pid} ({child.name()}) status: {child.status()}")
+                                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                    pass
                         return True
+                        
+                    # If main process is defunct, check children
+                    if process.status() == psutil.STATUS_ZOMBIE:
+                        if self.debug:
+                            print(f"Main process {pid} is defunct")
+                        # Only consider running if there are non-defunct children
+                        return any(child.is_running() and child.status() != psutil.STATUS_ZOMBIE 
+                                 for child in children)
+                                 
                 except psutil.NoSuchProcess:
                     # Check if any children are still running
                     for child in psutil.process_iter():
                         try:
-                            if child.ppid() == pid:
+                            if child.ppid() == pid and child.status() != psutil.STATUS_ZOMBIE:
                                 if self.debug:
                                     print(f"Child process {child.pid} ({child.name()}) is still running")
                                 return True
                         except (psutil.NoSuchProcess, psutil.AccessDenied):
                             pass
                     return False
+                    
+                return False
             
             # Monitor the process until it completes
             max_wait = 300  # Maximum wait time in seconds
