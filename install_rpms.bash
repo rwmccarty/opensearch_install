@@ -9,8 +9,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-# Source only the configuration section (up to the RPM List marker)
-eval "$(sed '/^#.*RPM List/q' "$CONFIG_FILE" | grep -v '^#')"
+# Source the entire config file to get all variables
+source "$CONFIG_FILE"
 
 # Verify DOWNLOADS_DIR was set in config
 if [ -z "$DOWNLOADS_DIR" ]; then
@@ -18,22 +18,22 @@ if [ -z "$DOWNLOADS_DIR" ]; then
     exit 1
 fi
 
+
+
 # Check if downloads directory exists
 if [ ! -d "$DOWNLOADS_DIR" ]; then
     echo "Error: Downloads directory $DOWNLOADS_DIR not found"
     exit 1
 fi
 
-# Read RPMs from config file (only after the RPM List marker)
+# Find all rpm variables and build the RPMS array
 RPMS=()
-while IFS= read -r line || [ -n "$line" ]; do
-    # Skip empty lines, comments, and the marker line
-    if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# && "$line" =~ \.rpm$ ]]; then
-        # Remove any trailing whitespace
-        line=$(echo "$line" | tr -d '[:space:]')
-        RPMS+=("$DOWNLOADS_DIR/$line")
+for var in $(compgen -v | grep '^rpm'); do
+    value="${!var}"
+    if [[ "$value" =~ \.rpm$ ]]; then
+        RPMS+=("$DOWNLOADS_DIR/$value")
     fi
-done < "$CONFIG_FILE"
+done
 
 # Check if we found any RPMs
 if [ ${#RPMS[@]} -eq 0 ]; then

@@ -30,7 +30,7 @@ class OpenSearchInstaller:
         self.debug = debug
 
     def download_opensearch(self):
-        print(f"Downloading {OPENSEARCH_SERVICE_NAME} RPM...")
+        print(f"Checking for {OPENSEARCH_SERVICE_NAME} RPM...")
         # Create downloads directory if it doesn't exist
         downloads_dir = os.path.join(os.getcwd(), DOWNLOAD_DIR)
         os.makedirs(downloads_dir, exist_ok=True)
@@ -38,7 +38,13 @@ class OpenSearchInstaller:
         opensearch_rpm_url = OPENSEARCH_RPM_URL(self.version)
         opensearch_rpm_file = os.path.join(downloads_dir, OPENSEARCH_RPM_FILENAME(self.version))
         
-        # Download the RPM file
+        # Check if file already exists and has content
+        if os.path.exists(opensearch_rpm_file) and os.path.getsize(opensearch_rpm_file) > 0:
+            print(f"RPM file already exists at: {opensearch_rpm_file}")
+            print("Skipping download...")
+            return opensearch_rpm_file
+            
+        # Download the RPM file if it doesn't exist
         try:
             print(f"Downloading from: {opensearch_rpm_url}")
             print(f"Downloading to: {downloads_dir}")
