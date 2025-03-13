@@ -125,15 +125,49 @@ class OpenSearchInstaller:
             print("\nInstalling RPM (this may take a few minutes)...")
             start_time = time.time()
             
-            # Execute installation using os.system
-            return_code = os.system(install_cmd)
+            # Start the process
+            process = subprocess.Popen(
+                install_cmd,
+                shell=True,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+                text=True
+            )
             
-            # Check return code
+            print(f"Started installation process with PID: {process.pid}")
+            
+            # Monitor the process until it completes
+            while True:
+                try:
+                    # Check if process is still running
+                    if process.poll() is not None:
+                        # Process has completed
+                        break
+                    
+                    # Check process status using ps command
+                    ps_check = subprocess.run(
+                        f"ps -p {process.pid}",
+                        shell=True,
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if ps_check.returncode != 0:
+                        print(f"Process {process.pid} no longer exists")
+                        break
+                    
+                    print(f"Process {process.pid} still running...")
+                    time.sleep(5)  # Wait 5 seconds before next check
+                    
+                except Exception as e:
+                    print(f"Error checking process status: {str(e)}")
+                    break
+            
+            # Get the final return code
+            return_code = process.wait()
             if return_code != 0:
                 raise Exception(f"Installation command failed with return code {return_code}")
 
-            # Now verify the installation completed successfully
-            self.verify_installation()
             elapsed_time = time.time() - start_time
             print(f"Installation process took {elapsed_time:.1f} seconds")
                 
