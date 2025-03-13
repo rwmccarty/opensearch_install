@@ -134,29 +134,43 @@ class OpenSearchInstaller:
                 text=True
             )
             
-            print(f"Started installation process with PID: {process.pid}")
+            print(f"Started shell process with PID: {process.pid}")
             
             # Monitor the process until it completes
-            while True:
+            max_wait = 300  # Maximum wait time in seconds
+            start = time.time()
+            
+            while (time.time() - start) < max_wait:
                 try:
-                    # Check if process is still running
-                    if process.poll() is not None:
-                        # Process has completed
-                        break
-                    
-                    # Check process status using ps command
-                    ps_check = subprocess.run(
-                        f"ps -p {process.pid}",
+                    # Check for any yum processes
+                    yum_check = subprocess.run(
+                        "pgrep -f 'yum.*localinstall'",
                         shell=True,
                         capture_output=True,
                         text=True
                     )
                     
-                    if ps_check.returncode != 0:
-                        print(f"Process {process.pid} no longer exists")
-                        break
+                    # Check for any rpm processes
+                    rpm_check = subprocess.run(
+                        "pgrep -f 'rpm'",
+                        shell=True,
+                        capture_output=True,
+                        text=True
+                    )
                     
-                    print(f"Process {process.pid} still running...")
+                    if yum_check.returncode != 0 and rpm_check.returncode != 0:
+                        # No yum or rpm processes found
+                        if process.poll() is not None:
+                            print("Installation processes completed")
+                            break
+                    
+                    # Print active processes
+                    print("\nActive processes:")
+                    if yum_check.stdout:
+                        print("YUM processes:", yum_check.stdout.strip())
+                    if rpm_check.stdout:
+                        print("RPM processes:", rpm_check.stdout.strip())
+                    
                     time.sleep(5)  # Wait 5 seconds before next check
                     
                 except Exception as e:
@@ -170,6 +184,10 @@ class OpenSearchInstaller:
 
             elapsed_time = time.time() - start_time
             print(f"Installation process took {elapsed_time:.1f} seconds")
+            
+            # Add a small delay to ensure all post-install scripts complete
+            print("Waiting for post-install processes to complete...")
+            time.sleep(10)
                 
         except subprocess.CalledProcessError as e:
             print(f"\nInstallation failed with return code {e.returncode}")
