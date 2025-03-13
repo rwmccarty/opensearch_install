@@ -9,8 +9,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-# Source the config file to get DOWNLOADS_DIR
-source "$CONFIG_FILE"
+# Source only the configuration section (up to the RPM List marker)
+eval "$(sed '/^#.*RPM List/q' "$CONFIG_FILE" | grep -v '^#')"
 
 # Verify DOWNLOADS_DIR was set in config
 if [ -z "$DOWNLOADS_DIR" ]; then
@@ -24,14 +24,14 @@ if [ ! -d "$DOWNLOADS_DIR" ]; then
     exit 1
 fi
 
-# Read RPMs from config file (skip comments, empty lines, and configuration settings)
+# Read RPMs from config file (only after the RPM List marker)
 RPMS=()
-while IFS= read -r line || [ -n "$line" ]; do
-    # Skip comments, empty lines, and configuration settings
-    if [[ ! "$line" =~ ^[[:space:]]*# && -n "$line" && ! "$line" =~ ^[A-Z_]+=.* ]]; then
+while IFS= read -r line; do
+    # Skip empty lines and comments
+    if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# ]]; then
         RPMS+=("$DOWNLOADS_DIR/$line")
     fi
-done < "$CONFIG_FILE"
+done < <(sed -n '/^#.*RPM List/,$p' "$CONFIG_FILE" | tail -n +2)
 
 # Check if we found any RPMs
 if [ ${#RPMS[@]} -eq 0 ]; then
@@ -47,7 +47,7 @@ install_rpm() {
     if [ ! -f "$rpm_file" ]; then
         echo "Error: $rpm_file not found"
         return 1
-    }
+    fi
     
     # Install the RPM with yum
     sudo yum localinstall "$rpm_file" -y --verbose --nogpgcheck
