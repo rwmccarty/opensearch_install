@@ -370,9 +370,9 @@ class OpenSearchInstaller:
                 print(e.stderr)
             return False
 
-    def provision_dashboard(self):
-        """Provision the Dashboard service"""
-        print(f"\nProvisioning {DASHBOARD_SERVICE_NAME}...")
+    def dashboard_install(self):
+        """Install and configure the Dashboard service"""
+        print(f"\nInstalling {DASHBOARD_SERVICE_NAME}...")
         try:
             # Enable the dashboard service
             print(f"Enabling {DASHBOARD_SERVICE_NAME} service...")
@@ -386,10 +386,10 @@ class OpenSearchInstaller:
             print(f"Verifying {DASHBOARD_SERVICE_NAME} service status...")
             subprocess.run(["sudo", "systemctl", "status", DASHBOARD_SERVICE_NAME], check=True)
             
-            print(f"✓ {DASHBOARD_SERVICE_NAME} service provisioned successfully")
+            print(f"✓ {DASHBOARD_SERVICE_NAME} service installed successfully")
             return True
         except subprocess.CalledProcessError as e:
-            print(f"\n✗ Error provisioning {DASHBOARD_SERVICE_NAME} service: {e}")
+            print(f"\n✗ Error installing {DASHBOARD_SERVICE_NAME} service: {e}")
             if hasattr(e, 'stderr') and e.stderr:
                 print("Error output:")
                 print(e.stderr)
@@ -587,7 +587,7 @@ plugins.security.disabled: false
         self.opensearch_install()
         self.service_wrapper()
         self.configuration_wrapper()
-        self.provision_dashboard()
+        self.dashboard_install()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=f"{OPENSEARCH_SERVICE_NAME} Installer")
